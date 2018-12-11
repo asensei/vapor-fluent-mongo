@@ -73,7 +73,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                 guard let document = query.data else {
                     throw Error.invalidQuery(query)
                 }
-                if let result = try collection.updateMany(filter: query.filter ?? [:], update: document) {
+                if let result = try collection.updateMany(filter: query.filter ?? [:], update: ["$set": document]) {
                     self.logger?.record(query: String(describing: result))
                 }
             case .delete:

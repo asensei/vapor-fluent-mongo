@@ -17,10 +17,9 @@ public typealias FluentMongoQueryData = Document
 extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryData == FluentMongoQueryData, Self.QueryField == FluentMongoQueryField {
 
     public static func queryDataSet<E: Encodable>(_ field: QueryField, to data: E, on query: inout Query) {
-        let path = ["$set"] + field.path
         let value: BSONValue? = BSONEncoder().encode(data)
         var document = query.data ?? Document()
-        document[path] = value
+        document[field.path] = value
         query.data = document
     }
 }

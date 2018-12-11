@@ -41,9 +41,9 @@ class FluentMongoProviderTests: XCTestCase {
 /*
         let fetch = try MyPet.find(id, on: conn).wait()
         XCTAssertNotNil(fetch)*/
-        try MyPet.query(on: conn).update(\.name, to: "Rex").run().wait()
-        //pet.name = "Rex"
-        //_ = try pet.save(on: conn).wait()
+        //try MyPet.query(on: conn).update(\.name, to: "Rex").run().wait()
+        pet.name = "Sparky"
+        _ = try pet.save(on: conn).wait()
     }
 
     func testBenchmark() throws {
