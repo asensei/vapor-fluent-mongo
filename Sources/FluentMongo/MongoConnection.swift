@@ -11,7 +11,7 @@ import MongoSwift
 import Fluent
 
 /// A Mongo frontend client.
-public final class MongoConnection: BasicWorker, DatabaseConnection/*, DatabaseQueryable*/ {
+public final class MongoConnection: BasicWorker, DatabaseConnection {
 
     public required init(config: MongoDatabaseConfig, on worker: Worker) throws {
         self.config = config
@@ -51,30 +51,46 @@ public final class MongoConnection: BasicWorker, DatabaseConnection/*, DatabaseQ
 
     /// See `DatabaseQueryable`.
 
-    public func query(_ query: FluentMongoQuery, _ handler: @escaping (Document) throws -> ()) -> Future<Void> {
+    public func query(_ query: Database.Query, _ handler: @escaping (Database.Output) throws -> ()) -> Future<Void> {
         do {
+            self.logger?.record(query: String(describing: query))
             let database = try self.client.db(config.database)
             let collection = try database.collection(query.collection)
 
             switch query.action {
             case .insert:
                 guard let document = query.data else {
-                    break
+                    throw Error.invalidQuery(query)
                 }
-                try collection.insertOne(document)
+                if let result = try collection.insertOne(document) {
+                    self.logger?.record(query: String(describing: result))
+                }
             case .find:
                 try collection
-                    .find(query.filter ?? [:], options: nil)
+                    .find(query.filter ?? [:], options: FindOptions(limit: query.limit, skip: query.skip))
                     .forEach { try handler($0) }
             case .update:
-                break
+                guard let document = query.data else {
+                    throw Error.invalidQuery(query)
+                }
+                if let result = try collection.updateMany(filter: query.filter ?? [:], update: document) {
+                    self.logger?.record(query: String(describing: result))
+                }
             case .delete:
-                break
+                if let result = try collection.deleteMany(query.filter ?? [:]) {
+                    self.logger?.record(query: String(describing: result))
+                }
             }
 
             return self.worker.future()
         } catch {
             return self.worker.future(error: error)
         }
+    }
+}
+
+public extension MongoConnection {
+    public enum Error: Swift.Error {
+        case invalidQuery(Database.Query)
     }
 }

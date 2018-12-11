@@ -31,14 +31,19 @@ class FluentMongoProviderTests: XCTestCase {
     func testCreate() throws {
         let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         let conn = try self.database.newConnection(on: eventLoop).wait()
+        //try MyPet.query(on: conn).delete()
+
         let pet = MyPet(name: "Molly")
         //let sis = MyPet(name: "Rex")
         //pet.sister = sis
         _ = try pet.save(on: conn).wait()
         let id = try pet.requireID()
-
+/*
         let fetch = try MyPet.find(id, on: conn).wait()
-        XCTAssertNotNil(fetch)
+        XCTAssertNotNil(fetch)*/
+        try MyPet.query(on: conn).update(\.name, to: "Rex").run().wait()
+        //pet.name = "Rex"
+        //_ = try pet.save(on: conn).wait()
     }
 
     func testBenchmark() throws {

@@ -18,7 +18,22 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
 
     public static func queryFilter(_ field: QueryField, _ method: QueryFilterMethod, _ value: QueryFilterValue) -> QueryFilter {
         var document = Document()
-        document[field.path] = [method.rawValue: value] as Document
+
+        let unwrappedValue: BSONValue?
+
+        switch method {
+        case .equal,
+             .greaterThan,
+             .greaterThanOrEqual,
+             .lessThan,
+             .lessThanOrEqual,
+             .notEqual:
+            unwrappedValue = value?.first ?? nil
+        case .inSubset, .notInSubset:
+            unwrappedValue = value
+        }
+
+        document[field.path] = [method.rawValue: unwrappedValue] as Document
 
         return document
     }
@@ -89,7 +104,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilterMethod == Fluent
 
 // MARK: - QueryFilterValue
 
-public typealias FluentMongoQueryFilterValue = BSONValue
+public typealias FluentMongoQueryFilterValue = [BSONValue?]
 
 extension Database where Self: QuerySupporting, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
 

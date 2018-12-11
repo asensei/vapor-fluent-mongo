@@ -33,6 +33,8 @@ extension MongoDatabase: QuerySupporting {
 
     public typealias QueryFilterRelation = FluentMongoQueryFilterRelation
 
+    public typealias QueryKey = FluentMongoQueryKey
+
     public static func queryExecute(_ query: Query, on conn: Connection, into handler: @escaping (Output, Connection) throws -> ()) -> Future<Void> {
         return conn.query(query) { try handler($0, conn) }
     }
@@ -47,33 +49,6 @@ extension MongoDatabase: QuerySupporting {
             }
 
             return conn.future(copy)
-    }
-}
-
-// MARK: - Key
-
-public extension MongoDatabase {
-
-    public typealias QueryKey = String
-
-    public static var queryKeyAll: QueryKey {
-        fatalError()
-    }
-
-    public static func queryAggregate(_ aggregate: QueryAggregate, _ fields: [QueryKey]) -> QueryKey {
-        fatalError()
-    }
-
-    public static func queryKey(_ field: QueryField) -> QueryKey {
-        fatalError()
-    }
-
-    public static func queryKeyApply(_ key: QueryKey, to query: inout Query) {
-        fatalError()
-    }
-
-    public static func queryRangeApply(lower: Int, upper: Int?, to query: inout Query) {
-        fatalError()
     }
 }
 

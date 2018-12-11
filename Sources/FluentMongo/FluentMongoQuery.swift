@@ -18,6 +18,8 @@ public struct FluentMongoQuery {
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var aggregate: FluentMongoQueryAggregate?
     public var data: Document?
+    public var skip: Int64?
+    public var limit: Int64?
 
     public init(
         collection: String,
@@ -25,7 +27,9 @@ public struct FluentMongoQuery {
         filter: FluentMongoQueryFilter? = nil,
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         aggregate: FluentMongoQueryAggregate? = nil,
-        data: Document? = nil
+        data: Document? = nil,
+        skip: Int64? = nil,
+        limit: Int64? = nil
         ) {
         self.collection = collection
         self.action = action
@@ -33,6 +37,8 @@ public struct FluentMongoQuery {
         self.defaultFilterRelation = defaultFilterRelation
         self.aggregate = aggregate
         self.data = data
+        self.skip = skip
+        self.limit = limit
     }
 }
 
@@ -44,5 +50,13 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery {
 
     public static func queryEntity(for query: FluentMongoQuery) -> String {
         return query.collection
+    }
+
+    public static func queryRangeApply(lower: Int, upper: Int?, to query: inout Query) {
+        query.skip = Int64(lower)
+
+        if let upper = upper {
+            query.limit = Int64(upper - lower)
+        }
     }
 }
