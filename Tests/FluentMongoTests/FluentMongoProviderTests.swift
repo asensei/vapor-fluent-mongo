@@ -46,7 +46,7 @@ class FluentMongoProviderTests: XCTestCase {
         _ = try pet.save(on: conn).wait()
     }
 
-    func testBenchmark() throws {
+    func testMongo() throws {
         let c = try MongoClient(connectionString: "mongodb://127.0.0.1", options: nil)
         let d = try c.db("vapor_database")
         let coll = try d.collection("MyPet")
@@ -55,6 +55,94 @@ class FluentMongoProviderTests: XCTestCase {
         let model = try coll.find(["age": gte], options: options)
         //print(model)
         print(model.next())
+    }
+
+    func testBenchmarkModels() {
+        do {
+            try self.benchmarker.benchmarkModels()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkUpdate() {
+        do {
+            try self.benchmarker.benchmarkUpdate()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkBugs() {
+        do {
+            try self.benchmarker.benchmarkBugs()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkSort() {
+        do {
+            try self.benchmarker.benchmarkSort()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkRange() {
+        do {
+            try self.benchmarker.benchmarkRange()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkSubset() {
+        do {
+            try self.benchmarker.benchmarkSubset()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkChunking() {
+        do {
+            try self.benchmarker.benchmarkChunking()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkAggregate() {
+        do {
+            try self.benchmarker.benchmarkAggregate()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkLifecycle() {
+        do {
+            try self.benchmarker.benchmarkLifecycle()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkAutoincrement() {
+        do {
+            try self.benchmarker.benchmarkAutoincrement()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkTimestampable() throws {
+        do {
+            try self.benchmarker.benchmarkTimestampable()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
     }
 }
 
