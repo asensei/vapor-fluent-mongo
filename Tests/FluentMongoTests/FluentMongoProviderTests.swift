@@ -38,12 +38,19 @@ class FluentMongoProviderTests: XCTestCase {
         //pet.sister = sis
         _ = try pet.save(on: conn).wait()
         let id = try pet.requireID()
-/*
-        let fetch = try MyPet.find(id, on: conn).wait()
-        XCTAssertNotNil(fetch)*/
+//MyPet.query(on: conn).
+        //let fetch = try MyPet.query(on: conn).project(field: \._id).all().wait()
+        //let fetch = try MyPet.query(on: conn).project(field: \._id).decode(data: MyTest.self).all().wait()
+        let fetch = try MyPet.query(on: conn).project(MyTest.self).all().wait()
+        XCTAssertNotNil(fetch)
         //try MyPet.query(on: conn).update(\.name, to: "Rex").run().wait()
-        pet.name = "Sparky"
-        _ = try pet.save(on: conn).wait()
+        //pet.name = "Sparky"
+        //_ = try pet.save(on: conn).wait()
+    }
+
+    struct MyTest: Codable {
+        let _id: UUID
+        let name: String?
     }
 
     func testMongo() throws {

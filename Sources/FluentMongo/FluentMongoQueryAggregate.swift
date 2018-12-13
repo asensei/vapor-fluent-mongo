@@ -40,3 +40,10 @@ extension Database where Self: QuerySupporting, Self.QueryAggregate == FluentMon
         return .maximum
     }
 }
+
+extension Database where Self: QuerySupporting, Self.QueryAggregate == FluentMongoQueryAggregate, Self.QueryKey == FluentMongoQueryKey {
+
+    public static func queryAggregate(_ aggregate: QueryAggregate, _ fields: [QueryKey]) -> QueryKey {
+        fatalError()
+    }
+}

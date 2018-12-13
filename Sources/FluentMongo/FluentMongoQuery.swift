@@ -14,6 +14,7 @@ import Fluent
 public struct FluentMongoQuery {
     public var collection: String
     public var action: FluentMongoQueryAction
+    public var projection: Document?
     public var filter: FluentMongoQueryFilter?
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var aggregate: FluentMongoQueryAggregate?
@@ -24,6 +25,7 @@ public struct FluentMongoQuery {
     public init(
         collection: String,
         action: FluentMongoQueryAction = .find,
+        projection: Document? = nil,
         filter: FluentMongoQueryFilter? = nil,
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         aggregate: FluentMongoQueryAggregate? = nil,
@@ -33,6 +35,7 @@ public struct FluentMongoQuery {
         ) {
         self.collection = collection
         self.action = action
+        self.projection = projection
         self.filter = filter
         self.defaultFilterRelation = defaultFilterRelation
         self.aggregate = aggregate

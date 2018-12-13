@@ -67,7 +67,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                 }
             case .find:
                 try collection
-                    .find(query.filter ?? [:], options: FindOptions(limit: query.limit, skip: query.skip))
+                    .find(query.filter ?? [:], options: FindOptions(limit: query.limit, projection: query.projection, skip: query.skip))
                     .forEach { try handler($0) }
             case .update:
                 guard let document = query.data else {

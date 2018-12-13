@@ -11,23 +11,37 @@ import Fluent
 
 // MARK: - QueryKey
 
-public typealias FluentMongoQueryKey = String
+public enum FluentMongoQueryKey {
+    case all
+    case field(String)
+}
+
+//public typealias FluentMongoQueryKey = Document
 
 extension Database where Self: QuerySupporting, Self.QueryKey == FluentMongoQueryKey {
 
     public static var queryKeyAll: QueryKey {
-        fatalError()
+        return .all
     }
+}
 
-    public static func queryAggregate(_ aggregate: QueryAggregate, _ fields: [QueryKey]) -> QueryKey {
-        fatalError()
-    }
+extension Database where Self: QuerySupporting, Self.QueryKey == FluentMongoQueryKey, Self.QueryField == FluentMongoQueryField {
 
     public static func queryKey(_ field: QueryField) -> QueryKey {
-        fatalError()
+        return .field(field.path.joined(separator: "."))
     }
+}
+
+extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryKey == FluentMongoQueryKey {
 
     public static func queryKeyApply(_ key: QueryKey, to query: inout Query) {
-        fatalError()
+        switch key {
+        case .all:
+            query.projection = nil
+        case .field(let value):
+            var document = query.projection ?? Document()
+            document[value] = 1
+            query.projection = document
+        }
     }
 }
