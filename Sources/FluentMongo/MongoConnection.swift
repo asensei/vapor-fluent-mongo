@@ -66,9 +66,12 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                     self.logger?.record(query: String(describing: result))
                 }
             case .find:
+                try collection.aggregate(query.aggregationPipeline()).forEach { try handler($0) }
+                /*
                 try collection
                     .find(query.filter ?? [:], options: FindOptions(limit: query.limit, projection: query.projection, skip: query.skip))
                     .forEach { try handler($0) }
+                */
             case .update:
                 guard let document = query.data else {
                     throw Error.invalidQuery(query)

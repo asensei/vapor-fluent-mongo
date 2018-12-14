@@ -12,7 +12,6 @@ import MongoSwift
 
 extension MongoDatabase: QuerySupporting {
 
-
     public typealias Query = FluentMongoQuery
 
     public typealias Output = FluentMongoOutput

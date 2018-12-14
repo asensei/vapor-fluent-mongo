@@ -32,7 +32,7 @@ class FluentMongoProviderTests: XCTestCase {
         let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         let conn = try self.database.newConnection(on: eventLoop).wait()
         //try MyPet.query(on: conn).delete()
-
+        let all = try MyPet.query(on: conn).filter(\.name == "Sparky").all().wait()
         let pet = MyPet(name: "Molly")
         //let sis = MyPet(name: "Rex")
         //pet.sister = sis
@@ -41,7 +41,8 @@ class FluentMongoProviderTests: XCTestCase {
 //MyPet.query(on: conn).
         //let fetch = try MyPet.query(on: conn).project(field: \._id).all().wait()
         //let fetch = try MyPet.query(on: conn).project(field: \._id).decode(data: MyTest.self).all().wait()
-        let fetch = try MyPet.query(on: conn).project(MyTest.self).all().wait()
+        //let fetch = try MyPet.query(on: conn).project(MyTest.self).all().wait()
+        let fetch = try MyPet.query(on: conn).keys(for: MyTest.self).all().wait()
         XCTAssertNotNil(fetch)
         //try MyPet.query(on: conn).update(\.name, to: "Rex").run().wait()
         //pet.name = "Sparky"
@@ -49,7 +50,7 @@ class FluentMongoProviderTests: XCTestCase {
     }
 
     struct MyTest: Codable {
-        let _id: UUID
+        //let _id: UUID
         let name: String?
     }
 
@@ -59,9 +60,57 @@ class FluentMongoProviderTests: XCTestCase {
         let coll = try d.collection("MyPet")
         let gte: Document = ["$gte": 2]
         let options = FindOptions(projection: ["_id"])
-        let model = try coll.find(["age": gte], options: options)
+        let sum: Document = ["$sum": "$age"]
+        let newField: Document = ["_id": nil, "totalAge": sum]
+        let group: Document = ["$group": newField]
+        //let model = try coll.find(["age": gte], options: options)
+        let result = try coll.aggregate([group])
         //print(model)
-        print(model.next())
+        print(result.next())
+    }
+
+    struct OptionalsStruct: Codable, Equatable {
+        let int: Int?
+        let bool: Bool?
+        let string: String
+
+        public static func == (lhs: OptionalsStruct, rhs: OptionalsStruct) -> Bool {
+            return lhs.int == rhs.int && lhs.bool == rhs.bool && lhs.string == rhs.string
+        }
+    }
+
+    struct GenericStruct<C: Codable & Equatable>: Codable, Equatable {
+        let value: C
+    }
+
+    /// Test encoding/decoding a struct containing optional values.
+    func testOptionals() throws {
+        let encoder = BSONEncoder()
+        let decoder = BSONDecoder()
+
+        let c1 = GenericStruct<Int?>(value: 1)
+        let c1Doc: Document = ["value": 1]
+        XCTAssertEqual(try encoder.encode(c1), c1Doc)
+        XCTAssertEqual(try decoder.decode(GenericStruct<Int?>.self, from: c1Doc), c1)
+
+        let c2 = GenericStruct<Int?>(value: nil)
+        let c2Doc: Document = ["value": nil]
+        XCTAssertEqual(try encoder.encode(c2), c2Doc)
+        XCTAssertEqual(try decoder.decode(GenericStruct<Int?>.self, from: c2Doc), c2)
+
+        let s1 = OptionalsStruct(int: 1, bool: true, string: "hi")
+        let s1Doc: Document = ["int": 1, "bool": true, "string": "hi"]
+        XCTAssertEqual(try encoder.encode(s1), s1Doc)
+        XCTAssertEqual(try decoder.decode(OptionalsStruct.self, from: s1Doc), s1)
+
+        let s2 = OptionalsStruct(int: nil, bool: true, string: "hi")
+        let s2Doc1: Document = ["bool": true, "string": "hi"]
+        XCTAssertEqual(try encoder.encode(s2), s2Doc1)
+        XCTAssertEqual(try decoder.decode(OptionalsStruct.self, from: s2Doc1), s2)
+
+        // test with key in doc explicitly set to NSNull
+        let s2Doc2: Document = ["int": /*NSNull()*/nil, "bool": true, "string": "hi"]
+        XCTAssertEqual(try decoder.decode(OptionalsStruct.self, from: s2Doc2), s2)
     }
 
     func testBenchmarkModels() {
