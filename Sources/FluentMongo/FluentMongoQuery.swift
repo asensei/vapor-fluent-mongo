@@ -12,10 +12,14 @@ import Fluent
 // MARK: - Query
 
 public struct FluentMongoQuery {
+
+    public static let defaultAggregateField: String = "fluentAggregate"
+
     public var collection: String
     public var action: FluentMongoQueryAction
     public var keys: [FluentMongoQueryKey]
     public var filter: FluentMongoQueryFilter?
+    public var filters: [FluentMongoQueryFilter]
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var data: Document?
     public var skip: Int64?
@@ -26,6 +30,7 @@ public struct FluentMongoQuery {
         action: FluentMongoQueryAction = .find,
         keys: [FluentMongoQueryKey] = [],
         filter: FluentMongoQueryFilter? = nil,
+        filters: [FluentMongoQueryFilter] = [],
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         data: Document? = nil,
         skip: Int64? = nil,
@@ -35,10 +40,57 @@ public struct FluentMongoQuery {
         self.action = action
         self.keys = keys
         self.filter = filter
+        self.filters = filters
         self.defaultFilterRelation = defaultFilterRelation
         self.data = data
         self.skip = skip
         self.limit = limit
+    }
+
+    func projection() -> Document? {
+        var projection = Document()
+        for key in self.keys {
+            guard case .raw(let field) = key else {
+                continue
+            }
+
+            projection[field] = 1
+        }
+
+        guard !projection.isEmpty else {
+            return nil
+        }
+
+        return projection
+    }
+
+    func aggregates() -> [Document]? {
+        var aggregates = [Document]()
+
+        for key in self.keys {
+            guard case .computed(let aggregate, let keys) = key else {
+                continue
+            }
+
+            switch aggregate {
+            case .count:
+                aggregates.append([aggregate.value: FluentMongoQuery.defaultAggregateField])
+            case .group(let accumulator):
+                var group: Document = ["_id": NSNull()]
+                for key in keys {
+                    guard case .raw(let field) = key else {
+                        continue
+                    }
+                    // It seems that fluent only support one aggregated field
+                    group[FluentMongoQuery.defaultAggregateField] = [accumulator.value: "$" + field] as Document
+                    break
+                }
+
+                aggregates.append([aggregate.value: group])
+            }
+        }
+
+        return aggregates.isEmpty ? nil : aggregates
     }
 
     func aggregationPipeline() -> [Document] {
@@ -53,15 +105,7 @@ public struct FluentMongoQuery {
         }
 
         // Projection
-        var projection = Document()
-        for key in self.keys {
-            guard case .raw(let field) = key else {
-                continue
-            }
-
-            projection[field] = 1
-        }
-        if !projection.isEmpty {
+        if let projection = self.projection() {
             pipeline.append(["$project": projection])
         }
 
@@ -80,28 +124,9 @@ public struct FluentMongoQuery {
             pipeline.append(["$limit": limit])
         }
 
-        // Aggregate
-        for key in self.keys {
-            guard case .computed(let aggregate, let keys) = key else {
-                continue
-            }
-
-            switch aggregate {
-            case .count:
-                pipeline.append([aggregate.value: "fluentAggregate"])
-            case .group(let accumulator):
-                var group: Document = ["_id": nil]
-                for key in keys {
-                    guard case .raw(let field) = key else {
-                        continue
-                    }
-                    // It seems that fluent only support one aggregated field
-                    group["fluentAggregate"] = [accumulator.value: "$" + field] as Document
-                    break
-                }
-
-                pipeline.append([aggregate.value: group])
-            }
+        // Aggregates
+        if let aggregates = self.aggregates() {
+            pipeline.append(contentsOf: aggregates)
         }
 
         return pipeline

@@ -15,6 +15,37 @@ public indirect enum FluentMongoQueryKey {
     case all
     case raw(String)
     case computed(FluentMongoQueryAggregate, [FluentMongoQueryKey])
+
+    public typealias Computed = (aggregate: FluentMongoQueryAggregate, keys: [FluentMongoQueryKey])
+
+    public var raw: String? {
+        switch self {
+        case .raw(let value):
+            return value
+        default:
+            return nil
+        }
+    }
+
+    public var computed: Computed? {
+        switch self {
+        case .computed(let aggregate, let keys):
+            return (aggregate: aggregate, keys: keys)
+        default:
+            return nil
+        }
+    }
+}
+
+extension Array where Element == FluentMongoQueryKey {
+
+    public var raw: [String] {
+        return self.compactMap { $0.raw }
+    }
+
+    public var computed: [FluentMongoQueryKey.Computed] {
+        return self.compactMap { $0.computed }
+    }
 }
 
 extension Database where Self: QuerySupporting, Self.QueryKey == FluentMongoQueryKey {

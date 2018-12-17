@@ -19,7 +19,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
     public static func queryFilter(_ field: QueryField, _ method: QueryFilterMethod, _ value: QueryFilterValue) -> QueryFilter {
         var document = Document()
 
-        let unwrappedValue: BSONValue?
+        let unwrappedValue: BSONValue
 
         switch method {
         case .equal,
@@ -28,9 +28,9 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
              .lessThan,
              .lessThanOrEqual,
              .notEqual:
-            unwrappedValue = value?.first ?? nil
+            unwrappedValue = value?.first ?? NSNull()
         case .inSubset, .notInSubset:
-            unwrappedValue = value
+            unwrappedValue = value ?? []
         }
 
         document[field.path] = [method.rawValue: unwrappedValue] as Document
@@ -42,6 +42,8 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
 extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryFilter == FluentMongoQueryFilter {
 
     public static func queryFilters(for query: Query) -> [QueryFilter] {
+        print("queryFilters: \(query.filters)")
+        //return query.filters
         guard let filter = query.filter else {
             return []
         }
@@ -50,7 +52,14 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
     }
 
     public static func queryFilterApply(_ filter: QueryFilter, to query: inout Query) {
-        query.filter = filter
+        print("queryFilterApply: \(filter)")
+        //query.filters.append(filter)
+        switch query.filter {
+        case .some(let document):
+            query.filter = [query.defaultFilterRelation.rawValue: [document, filter]]
+        case .none:
+            query.filter = filter
+        }
     }
 }
 
@@ -104,13 +113,13 @@ extension Database where Self: QuerySupporting, Self.QueryFilterMethod == Fluent
 
 // MARK: - QueryFilterValue
 
-public typealias FluentMongoQueryFilterValue = [BSONValue?]
+public typealias FluentMongoQueryFilterValue = [BSONValue]
 
 extension Database where Self: QuerySupporting, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
 
     public static func queryFilterValue<E: Encodable>(_ encodables: [E]) -> QueryFilterValue {
         let encoder = BSONEncoder()
-        let value: [BSONValue?] = encodables.map { encoder.encode($0) }
+        let value: [BSONValue] = encodables.compactMap { try? encoder.encodeBSONValue($0) }
 
         return value
     }
@@ -141,6 +150,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilterRelation == Flue
 extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQueryFilter, Self.QueryFilterRelation == FluentMongoQueryFilterRelation {
 
     public static func queryFilterGroup(_ relation: QueryFilterRelation, _ filters: [QueryFilter]) -> QueryFilter {
+        print("queryFilterGroup: \(relation) | \(filters)")
         return [relation.rawValue: filters]
     }
 }

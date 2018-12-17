@@ -24,6 +24,24 @@ public enum FluentMongoQueryAggregate {
         }
     }
 
+    public var isCount: Bool {
+        switch self {
+        case .count:
+            return true
+        default:
+            return false
+        }
+    }
+
+    public var isGroup: Bool {
+        switch self {
+        case .group:
+            return true
+        default:
+            return false
+        }
+    }
+
     public enum AccumulatorOperator: String {
         /// Returns an array of unique expression values for each group. Order of the array elements is undefined.
         case addToSet

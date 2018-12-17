@@ -66,12 +66,21 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                     self.logger?.record(query: String(describing: result))
                 }
             case .find:
-                try collection.aggregate(query.aggregationPipeline()).forEach { try handler($0) }
-                /*
-                try collection
-                    .find(query.filter ?? [:], options: FindOptions(limit: query.limit, projection: query.projection, skip: query.skip))
-                    .forEach { try handler($0) }
-                */
+                let cursor = try collection.aggregate(query.aggregationPipeline())
+                var count = 0
+                try cursor.forEach {
+                    count += 1
+                    try handler($0)
+                }
+                // Running `count` in an aggregation pipeline produce a `nil` document when the provided filter does not match any. Therefore we have to manually set the count to `0`.
+                if let aggregate = query.keys.computed.first?.aggregate, count == 0 {
+                    switch aggregate {
+                    case .count:
+                        try handler([FluentMongoQuery.defaultAggregateField: 0])
+                    case .group:
+                        try handler([FluentMongoQuery.defaultAggregateField: NSNull()])
+                    }
+                }
             case .update:
                 guard let document = query.data else {
                     throw Error.invalidQuery(query)
