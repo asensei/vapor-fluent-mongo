@@ -52,20 +52,27 @@ class FluentMongoProviderTests: XCTestCase {
     func testDistinct() {
         do {
             let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
-            _ = try User(name: "Alice").save(on: conn).wait()
-            _ = try User(name: "Bob").save(on: conn).wait()
-            _ = try User(name: "Charlie").save(on: conn).wait()
-            _ = try User(name: "Bob").save(on: conn).wait()
-            _ = try User(name: "Charlie").save(on: conn).wait()
+            _ = try User(name: "Alice", age: 20).save(on: conn).wait()
+            _ = try User(name: "Bob", age: 20).save(on: conn).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: conn).wait()
+            _ = try User(name: "Bob", age: 19).save(on: conn).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: conn).wait()
 
             XCTAssertEqual(try User.query(on: conn).count().wait(), 5)
             XCTAssertEqual(try User.query(on: conn).distinct().count().wait(), 5)
             XCTAssertEqual(try User.query(on: conn).distinct().key(\.name).count().wait(), 3)
+            XCTAssertEqual(try User.query(on: conn).distinct().key(\.name).key(\.age).count().wait(), 4)
             let users = try User.query(on: conn).distinct().key(\.name).all().wait().map { $0.name }
             XCTAssertEqual(users.count, 3)
             XCTAssertTrue(users.contains("Alice"))
             XCTAssertTrue(users.contains("Bob"))
             XCTAssertTrue(users.contains("Charlie"))
+            let usersNameAge = try User.query(on: conn).distinct().key(\.name).key(\.age).all().wait()
+            XCTAssertEqual(usersNameAge.count, 4)
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Alice" && $0.age == 20 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 20 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 19 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Charlie" && $0.age == 20 }))
         } catch {
             XCTFail(error.localizedDescription)
         }

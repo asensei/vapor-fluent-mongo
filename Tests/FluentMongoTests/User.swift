@@ -17,9 +17,11 @@ final class User: FluentMongoModel {
 
     var _id: UUID?
     var name: String = ""
+    var age: Int?
 
-    init(_id: UUID? = nil, name: String) {
+    init(_id: UUID? = nil, name: String, age: Int? = nil) {
         self._id = _id
         self.name = name
+        self.age = age
     }
 }

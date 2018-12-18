@@ -70,6 +70,30 @@ public struct FluentMongoQuery {
         return projection
     }
 
+    func distinct() -> [Document] {
+        var stages = [Document]()
+        var group = Document()
+        var id = Document()
+        for key in self.keys {
+            guard case .raw(let field) = key else {
+                continue
+            }
+            id[field] = "$" + field
+        }
+
+        if id.isEmpty {
+            id["_id"] = "$_id"
+        }
+
+        group["_id"] = id
+        group["doc"] = ["$first": "$$ROOT"] as Document
+
+        stages.append(["$group": group])
+        stages.append(["$replaceRoot": ["newRoot": "$doc"] as Document])
+
+        return stages
+    }
+
     func aggregates() -> [Document]? {
         var aggregates = [Document]()
 
@@ -113,6 +137,11 @@ public struct FluentMongoQuery {
         // Projection
         if let projection = self.projection() {
             pipeline.append(["$project": projection])
+        }
+
+        // Distinct
+        if self.isDistinct {
+            pipeline.append(contentsOf: self.distinct())
         }
 
         // Sort
