@@ -28,7 +28,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
              .lessThan,
              .lessThanOrEqual,
              .notEqual:
-            unwrappedValue = value?.first ?? NSNull()
+            unwrappedValue = value?.first ?? BSONNull()
         case .inSubset, .notInSubset:
             unwrappedValue = value ?? []
         }

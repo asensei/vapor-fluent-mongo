@@ -78,7 +78,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                     case .count:
                         try handler([FluentMongoQuery.defaultAggregateField: 0])
                     case .group:
-                        try handler([FluentMongoQuery.defaultAggregateField: NSNull()])
+                        try handler([FluentMongoQuery.defaultAggregateField: BSONNull()])
                     }
                 }
             case .update:

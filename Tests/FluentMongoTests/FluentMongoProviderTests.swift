@@ -14,6 +14,7 @@ import FluentBenchmark
 class FluentMongoProviderTests: XCTestCase {
 
     static let allTests = [
+        ("testDistinct", testDistinct),
         ("testBenchmarkModels", testBenchmarkModels),
         ("testBenchmarkUpdate", testBenchmarkUpdate),
         ("testBenchmarkBugs", testBenchmarkBugs),
@@ -43,6 +44,28 @@ class FluentMongoProviderTests: XCTestCase {
             try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
             self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testDistinct() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+            _ = try User(name: "Alice").save(on: conn).wait()
+            _ = try User(name: "Bob").save(on: conn).wait()
+            _ = try User(name: "Charlie").save(on: conn).wait()
+            _ = try User(name: "Bob").save(on: conn).wait()
+            _ = try User(name: "Charlie").save(on: conn).wait()
+
+            XCTAssertEqual(try User.query(on: conn).count().wait(), 5)
+            XCTAssertEqual(try User.query(on: conn).distinct().count().wait(), 5)
+            XCTAssertEqual(try User.query(on: conn).distinct().key(\.name).count().wait(), 3)
+            let users = try User.query(on: conn).distinct().key(\.name).all().wait().map { $0.name }
+            XCTAssertEqual(users.count, 3)
+            XCTAssertTrue(users.contains("Alice"))
+            XCTAssertTrue(users.contains("Bob"))
+            XCTAssertTrue(users.contains("Charlie"))
         } catch {
             XCTFail(error.localizedDescription)
         }

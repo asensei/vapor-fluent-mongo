@@ -18,6 +18,7 @@ public struct FluentMongoQuery {
     public var collection: String
     public var action: FluentMongoQueryAction
     public var keys: [FluentMongoQueryKey]
+    public var isDistinct: Bool
     public var filter: FluentMongoQueryFilter?
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var data: FluentMongoQueryData?
@@ -30,6 +31,7 @@ public struct FluentMongoQuery {
         collection: String,
         action: FluentMongoQueryAction = .find,
         keys: [FluentMongoQueryKey] = [],
+        isDistinct: Bool = false,
         filter: FluentMongoQueryFilter? = nil,
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         data: FluentMongoQueryData? = nil,
@@ -41,6 +43,7 @@ public struct FluentMongoQuery {
         self.collection = collection
         self.action = action
         self.keys = keys
+        self.isDistinct = isDistinct
         self.filter = filter
         self.defaultFilterRelation = defaultFilterRelation
         self.data = data
@@ -79,7 +82,7 @@ public struct FluentMongoQuery {
             case .count:
                 aggregates.append([aggregate.value: FluentMongoQuery.defaultAggregateField])
             case .group(let accumulator):
-                var group: Document = ["_id": NSNull()]
+                var group: Document = ["_id": BSONNull()]
                 for key in keys {
                     guard case .raw(let field) = key else {
                         continue

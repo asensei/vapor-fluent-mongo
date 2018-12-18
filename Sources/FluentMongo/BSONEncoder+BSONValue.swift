@@ -20,7 +20,12 @@ public extension BSONEncoder {
             let wrappedData = ["value": value]
             let document: Document = try self.encode(wrappedData)
 
-            return document["value"] ?? NSNull()
+            return document["value"] ?? BSONNull()
         }
     }
+}
+
+// TODO: remove this https://github.com/mongodb/mongo-swift-driver/pull/175
+extension BSONNull {
+    init() { }
 }
