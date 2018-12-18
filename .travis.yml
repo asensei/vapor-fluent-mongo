@@ -19,6 +19,7 @@ before_install:
       gem install bundler;
       bundle --version;
       brew update;
+      brew install mongo-c-driver;
       brew install mongodb;
       brew services start mongodb;
       brew outdated swiftlint || brew upgrade swiftlint;
@@ -37,7 +38,7 @@ script:
       swift test;
       swiftlint;
     else
-      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "swift build && swift build -c release && swift test";
+      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "apt-get update && apt-get install libmongoc && swift build && swift build -c release && swift test";
     fi
 
 notifications:
