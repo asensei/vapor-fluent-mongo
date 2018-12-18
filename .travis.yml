@@ -38,7 +38,16 @@ script:
       swift test;
       swiftlint;
     else
-      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "apt-get update && apt-get -y install libmongoc-1.0-0 && swift build && swift build -c release && swift test";
+      args="wget https://github.com/mongodb/mongo-c-driver/releases/download/1.13.0/mongo-c-driver-1.13.0.tar.gz \
+        && tar xzf mongo-c-driver-1.13.0.tar.gz \
+        && cd mongo-c-driver-1.13.0 \
+        && mkdir cmake-build \
+        && cd cmake-build \
+        && cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+        && swift build \
+        && swift build -c release && \
+        swift test"
+      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c ${args};
     fi
 
 notifications:
