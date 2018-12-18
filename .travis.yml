@@ -38,7 +38,7 @@ script:
       swift test;
       swiftlint;
     else
-      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "apt-get update && apt-get install libmongoc-1.0-0 && swift build && swift build -c release && swift test";
+      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "apt-get update && apt-get -y install libmongoc-1.0-0 && swift build && swift build -c release && swift test";
     fi
 
 notifications:
