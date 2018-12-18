@@ -42,8 +42,6 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
 extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryFilter == FluentMongoQueryFilter {
 
     public static func queryFilters(for query: Query) -> [QueryFilter] {
-        print("queryFilters: \(query.filters)")
-        //return query.filters
         guard let filter = query.filter else {
             return []
         }
@@ -52,8 +50,6 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
     }
 
     public static func queryFilterApply(_ filter: QueryFilter, to query: inout Query) {
-        print("queryFilterApply: \(filter)")
-        //query.filters.append(filter)
         switch query.filter {
         case .some(let document):
             query.filter = [query.defaultFilterRelation.rawValue: [document, filter]]
@@ -150,7 +146,10 @@ extension Database where Self: QuerySupporting, Self.QueryFilterRelation == Flue
 extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQueryFilter, Self.QueryFilterRelation == FluentMongoQueryFilterRelation {
 
     public static func queryFilterGroup(_ relation: QueryFilterRelation, _ filters: [QueryFilter]) -> QueryFilter {
-        print("queryFilterGroup: \(relation) | \(filters)")
+        guard filters.count >= 2 else {
+            return filters.first ?? [:]
+        }
+
         return [relation.rawValue: filters]
     }
 }

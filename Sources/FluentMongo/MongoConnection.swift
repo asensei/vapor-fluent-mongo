@@ -82,11 +82,17 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
                     }
                 }
             case .update:
-                guard let document = query.data else {
+                switch (query.data, query.partialData) {
+                case (.none, .some(let document)):
+                    if let result = try collection.updateMany(filter: query.filter ?? [:], update: ["$set": document]) {
+                        self.logger?.record(query: String(describing: result))
+                    }
+                case (.some(let document), .none):
+                    if let result = try collection.replaceOne(filter: query.filter ?? [:], replacement: document) {
+                        self.logger?.record(query: String(describing: result))
+                    }
+                default:
                     throw Error.invalidQuery(query)
-                }
-                if let result = try collection.updateMany(filter: query.filter ?? [:], update: ["$set": document]) {
-                    self.logger?.record(query: String(describing: result))
                 }
             case .delete:
                 if let result = try collection.deleteMany(query.filter ?? [:]) {

@@ -19,9 +19,9 @@ public struct FluentMongoQuery {
     public var action: FluentMongoQueryAction
     public var keys: [FluentMongoQueryKey]
     public var filter: FluentMongoQueryFilter?
-    public var filters: [FluentMongoQueryFilter]
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
-    public var data: Document?
+    public var data: FluentMongoQueryData?
+    public var partialData: FluentMongoQueryData?
     public var skip: Int64?
     public var limit: Int64?
 
@@ -30,9 +30,9 @@ public struct FluentMongoQuery {
         action: FluentMongoQueryAction = .find,
         keys: [FluentMongoQueryKey] = [],
         filter: FluentMongoQueryFilter? = nil,
-        filters: [FluentMongoQueryFilter] = [],
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
-        data: Document? = nil,
+        data: FluentMongoQueryData? = nil,
+        partialData: FluentMongoQueryData? = nil,
         skip: Int64? = nil,
         limit: Int64? = nil
         ) {
@@ -40,9 +40,9 @@ public struct FluentMongoQuery {
         self.action = action
         self.keys = keys
         self.filter = filter
-        self.filters = filters
         self.defaultFilterRelation = defaultFilterRelation
         self.data = data
+        self.partialData = partialData
         self.skip = skip
         self.limit = limit
     }

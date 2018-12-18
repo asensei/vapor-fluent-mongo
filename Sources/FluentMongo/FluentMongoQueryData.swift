@@ -21,9 +21,9 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
             return
         }
 
-        var document = query.data ?? Document()
+        var document = query.partialData ?? Document()
         document[field.path] = value
-        query.data = document
+        query.partialData = document
     }
 }
 
