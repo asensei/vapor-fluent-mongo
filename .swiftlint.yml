@@ -11,7 +11,7 @@ file_length: 630
 nesting:
   type_level: 2
 function_parameter_count: 6
-cyclomatic_complexity: 12
+cyclomatic_complexity: 20
 included:
   - Package.swift
   - Sources

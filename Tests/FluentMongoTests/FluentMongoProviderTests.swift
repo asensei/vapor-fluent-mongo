@@ -33,18 +33,19 @@ class FluentMongoProviderTests: XCTestCase {
 
     override func setUp() {
         let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        let config = try! MongoDatabaseConfig(
-            host: "localhost",
-            port: 27017,
-            database: "vapor_database"
-        )
         do {
+            let config = try MongoDatabaseConfig(
+                host: "localhost",
+                port: 27017,
+                database: "vapor_database"
+            )
+
             try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
+            self.database = MongoDatabase(config: config)
+            self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
         } catch {
             XCTFail(error.localizedDescription)
         }
-        self.database = MongoDatabase(config: config)
-        self.benchmarker = try! Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
     }
 
     func testBenchmarkModels() {

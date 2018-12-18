@@ -38,7 +38,7 @@ extension MongoDatabase: QuerySupporting {
 
     public typealias QuerySortDirection = FluentMongoQuerySortDirection
 
-    public static func queryExecute(_ query: Query, on conn: Connection, into handler: @escaping (Output, Connection) throws -> ()) -> Future<Void> {
+    public static func queryExecute(_ query: Query, on conn: Connection, into handler: @escaping (Output, Connection) throws -> Void) -> Future<Void> {
         return conn.query(query) { try handler($0, conn) }
     }
 

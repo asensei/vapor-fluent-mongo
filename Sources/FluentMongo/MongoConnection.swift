@@ -51,7 +51,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
 
     /// See `DatabaseQueryable`.
 
-    public func query(_ query: Database.Query, _ handler: @escaping (Database.Output) throws -> ()) -> Future<Void> {
+    public func query(_ query: Database.Query, _ handler: @escaping (Database.Output) throws -> Void) -> Future<Void> {
         do {
             self.logger?.record(query: String(describing: query))
             let database = try self.client.db(config.database)
