@@ -24,6 +24,7 @@ public struct FluentMongoQuery {
     public var partialData: FluentMongoQueryData?
     public var skip: Int64?
     public var limit: Int64?
+    public var sort: FluentMongoQuerySort?
 
     public init(
         collection: String,
@@ -34,7 +35,8 @@ public struct FluentMongoQuery {
         data: FluentMongoQueryData? = nil,
         partialData: FluentMongoQueryData? = nil,
         skip: Int64? = nil,
-        limit: Int64? = nil
+        limit: Int64? = nil,
+        sort: FluentMongoQuerySort? = nil
         ) {
         self.collection = collection
         self.action = action
@@ -45,6 +47,7 @@ public struct FluentMongoQuery {
         self.partialData = partialData
         self.skip = skip
         self.limit = limit
+        self.sort = sort
     }
 
     func projection() -> Document? {
@@ -109,10 +112,10 @@ public struct FluentMongoQuery {
             pipeline.append(["$project": projection])
         }
 
-        /* Sort
-         if let sort = query.sort {
-
-         }*/
+        // Sort
+        if let sort = self.sort {
+            pipeline.append(["$sort": sort])
+        }
 
         // Skip
         if let skip = self.skip {

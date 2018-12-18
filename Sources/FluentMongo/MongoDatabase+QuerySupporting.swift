@@ -34,6 +34,10 @@ extension MongoDatabase: QuerySupporting {
 
     public typealias QueryKey = FluentMongoQueryKey
 
+    public typealias QuerySort = FluentMongoQuerySort
+
+    public typealias QuerySortDirection = FluentMongoQuerySortDirection
+
     public static func queryExecute(_ query: Query, on conn: Connection, into handler: @escaping (Output, Connection) throws -> ()) -> Future<Void> {
         return conn.query(query) { try handler($0, conn) }
     }
@@ -62,30 +66,5 @@ extension MongoDatabase: QuerySupporting {
             }
 
             return conn.future(copy)
-    }
-}
-
-// MARK: - Sort
-
-public extension MongoDatabase {
-
-    public typealias QuerySort = String
-
-    public typealias QuerySortDirection = String
-
-    public static func querySort(_ field: QueryField, _ direction: QuerySortDirection) -> QuerySort {
-        fatalError()
-    }
-
-    public static var querySortDirectionAscending: QuerySortDirection {
-        fatalError()
-    }
-
-    public static var querySortDirectionDescending: QuerySortDirection {
-        fatalError()
-    }
-
-    public static func querySortApply(_ sort: QuerySort, to query: inout Query) {
-        fatalError()
     }
 }
