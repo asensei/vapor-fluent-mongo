@@ -38,7 +38,6 @@ script:
       swift test;
       swiftlint;
     else
-      # clone and build libmongoc
       args="apt-get update \
         && apt-get -y install cmake \
         && git clone -b r1.13 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc \
