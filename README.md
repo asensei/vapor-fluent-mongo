@@ -5,6 +5,12 @@
 
 Mongo driver for Fluent `3.x`.
 
+## Environment Variables
+
+| Name    | Required | Default | Value (e.g.) | Description |
+| ------------- |:-------------:|:-------------:|:-------------:|:-------------|
+| `FLUENT_MONGO_CONNECTION_URL` | ✔ | `-` | `mongodb://127.0.0.1:27017/vapor` | Mongo connection string. |
+
 ## Getting Started
 
 ### Install the MongoDB C Driver

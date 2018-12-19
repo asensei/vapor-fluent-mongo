@@ -38,15 +38,15 @@ script:
       swift test;
       swiftlint;
     else
-      args="apt-get update \
-        && apt-get -y install cmake \
-        && git clone -b r1.13 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc \
-        && pushd /tmp/libmongoc \
-        && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-        && make -j8 install \
-        && popd \
-        && swift build \
-        && swift build -c release \
+      args="apt-get update
+        && apt-get -y install cmake
+        && git clone -b r1.13 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
+        && pushd /tmp/libmongoc
+        && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
+        && make -j8 install
+        && popd
+        && swift build
+        && swift build -c release
         && swift test";
       docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "${args}";
     fi
