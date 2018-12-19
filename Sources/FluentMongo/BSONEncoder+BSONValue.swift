@@ -24,8 +24,3 @@ public extension BSONEncoder {
         }
     }
 }
-
-// TODO: remove this https://github.com/mongodb/mongo-swift-driver/pull/175
-extension BSONNull {
-    init() { }
-}
