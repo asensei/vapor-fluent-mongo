@@ -48,7 +48,7 @@ script:
         && swift build
         && swift build -c release
         && swift test";
-      docker run --rm -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "${args}";
+      docker run --rm --net=host -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "${args}";
     fi
 
 notifications:
