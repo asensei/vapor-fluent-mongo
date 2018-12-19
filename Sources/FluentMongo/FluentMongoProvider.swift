@@ -41,7 +41,7 @@ public final class FluentMongoProvider: Provider {
 extension MongoDatabaseConfig: ServiceType {
     /// See `ServiceType.makeService(for:)`
     public static func makeService(for worker: Container) throws -> MongoDatabaseConfig {
-        return try .default(database: "vapor")
+        return try .init()
     }
 }
 

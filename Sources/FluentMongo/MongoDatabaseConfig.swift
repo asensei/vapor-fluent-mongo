@@ -67,4 +67,24 @@ public struct MongoDatabaseConfig {
 
         try self.init(connectionURL: url, options: options)
     }
+
+    public init(environment: [String: String] = ProcessInfo.processInfo.environment) throws {
+
+        guard let connectionString = environment[EnvironmentKey.connectionURL.rawValue] else {
+            throw Error.missingEnvironmentKey(.connectionURL)
+        }
+
+        try self.init(connectionString: connectionString)
+    }
+}
+
+public extension MongoDatabaseConfig {
+
+    public enum EnvironmentKey: String {
+        case connectionURL = "FLUENT_MONGO_CONNECTION_URL"
+    }
+
+    public enum Error: Swift.Error {
+        case missingEnvironmentKey(EnvironmentKey)
+    }
 }
