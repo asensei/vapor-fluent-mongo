@@ -43,28 +43,27 @@ extension MongoDatabase: QuerySupporting {
     }
 
     public static func modelEvent<M: Model>(event: ModelEvent, model: M, on conn: Connection) -> Future<M> where M.Database == MongoDatabase {
-            var copy = model
-            switch event {
-            case .willCreate where M.ID.self is UUID.Type && copy.fluentID == nil:
-                copy.fluentID = UUID() as? M.ID
-            case .willCreate where M.ID.self is Int.Type && copy.fluentID == nil:
-                return M.query(on: conn).max(M.idKey).map { id in
-                    switch id {
-                    case .some(let value as Int):
-                        copy.fluentID = (value + 1) as? M.ID
-                    case .none:
-                        copy.fluentID = 0 as? M.ID
-                    default:
-                        break
-                    }
-
-                    return copy
+        var copy = model
+        switch event {
+        case .willCreate where M.ID.self is UUID.Type && copy.fluentID == nil:
+            copy.fluentID = UUID() as? M.ID
+        case .willCreate where M.ID.self is Int.Type && copy.fluentID == nil:
+            return M.query(on: conn).max(M.idKey).map { id in
+                switch id {
+                case .some(let value as Int):
+                    copy.fluentID = (value + 1) as? M.ID
+                case .none:
+                    copy.fluentID = 0 as? M.ID
+                default:
+                    break
                 }
 
-            default:
-                break
+                return copy
             }
+        default:
+            break
+        }
 
-            return conn.future(copy)
+        return conn.future(copy)
     }
 }

@@ -28,9 +28,7 @@ class FluentMongoProviderTests: XCTestCase {
         ("testBenchmarkLifecycle", testBenchmarkLifecycle),
         ("testBenchmarkAutoincrement", testBenchmarkAutoincrement),
         ("testBenchmarkTimestampable", testBenchmarkTimestampable),
-        ("testBenchmarkJoins", testBenchmarkJoins),
-        ("testBenchmarkReferentialActions", testBenchmarkReferentialActions),
-        ("testBenchmarkRelations", testBenchmarkRelations)
+        ("testBenchmarkJoins", testBenchmarkJoins)
     ]
 
     var benchmarker: Benchmarker<FluentMongo.MongoDatabase>!
@@ -227,19 +225,22 @@ class FluentMongoProviderTests: XCTestCase {
         }
     }
 
-    func testBenchmarkReferentialActions() {
+    /** Implement when we implementing
+
+    func testBenchmarkTransaction() {
         do {
-            try self.benchmarker.benchmarkReferentialActions()
+            try self.benchmarker.benchmarkTransaction()
         } catch {
             XCTFail(error.localizedDescription)
         }
     }
 
-    func testBenchmarkRelations() {
+    func testBenchmarkSoftDeletable() {
         do {
-            try self.benchmarker.benchmarkRelations()
+            try self.benchmarker.benchmarkSoftDeletable()
         } catch {
             XCTFail(error.localizedDescription)
         }
     }
+    */
 }
