@@ -20,6 +20,7 @@ public struct FluentMongoQuery {
     public var action: FluentMongoQueryAction
     public var keys: [FluentMongoQueryKey]
     public var isDistinct: Bool
+    public var joins: FluentMongoQueryJoin
     public var filter: FluentMongoQueryFilter?
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var data: FluentMongoQueryData?
@@ -33,6 +34,7 @@ public struct FluentMongoQuery {
         action: FluentMongoQueryAction = .find,
         keys: [FluentMongoQueryKey] = [],
         isDistinct: Bool = false,
+        joins: FluentMongoQueryJoin = [],
         filter: FluentMongoQueryFilter? = nil,
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         data: FluentMongoQueryData? = nil,
@@ -45,6 +47,7 @@ public struct FluentMongoQuery {
         self.action = action
         self.keys = keys
         self.isDistinct = isDistinct
+        self.joins = joins
         self.filter = filter
         self.defaultFilterRelation = defaultFilterRelation
         self.data = data
@@ -61,12 +64,14 @@ public struct FluentMongoQuery {
                 continue
             }
 
-            projection[field] = 1
+            projection[field.pathWithNamespace.joined(separator: ".")] = true
         }
 
         guard !projection.isEmpty else {
             return nil
         }
+
+        projection[self.collection + "._id"] = true
 
         return projection
     }
@@ -79,18 +84,19 @@ public struct FluentMongoQuery {
             guard case .raw(let field) = key else {
                 continue
             }
-            id[field] = "$" + field
+            // It is not possible to use dots when specifying an id field for $group
+            id[field.pathWithNamespace.joined(separator: ":")] = "$" + field.pathWithNamespace.joined(separator: ".")
         }
 
         if id.isEmpty {
-            id["_id"] = "$_id"
+            id[self.collection + ":_id"] = "$" + self.collection + "._id"
         }
 
         group["_id"] = id
-        group["doc"] = ["$first": "$$ROOT"] as Document
+        group["doc"] = ["$first": "$" + self.collection] as Document
 
         stages.append(["$group": group])
-        stages.append(["$replaceRoot": ["newRoot": "$doc"] as Document])
+        stages.append(["$project": [self.collection: "$doc"] as Document])
 
         return stages
     }
@@ -113,7 +119,7 @@ public struct FluentMongoQuery {
                         continue
                     }
                     // It seems that fluent only support one aggregated field
-                    group[FluentMongoQuery.defaultAggregateField] = [accumulator.value: "$" + field] as Document
+                    group[FluentMongoQuery.defaultAggregateField] = [accumulator.value: "$" + field.pathWithNamespace.joined(separator: ".")] as Document
                     break
                 }
 
@@ -125,12 +131,17 @@ public struct FluentMongoQuery {
     }
 
     func aggregationPipeline() -> [Document] {
-        guard self.action == .find else {
-            return []
-        }
-
         var pipeline = [Document]()
 
+        // Namespace root document
+        pipeline.append(["$project": [self.collection: "$$ROOT"] as Document])
+
+        // Joins
+        if !self.joins.isEmpty {
+            pipeline.append(contentsOf: self.joins)
+        }
+
+        // Filters
         if let filter = self.filter {
             pipeline.append(["$match": filter])
         }
@@ -163,6 +174,9 @@ public struct FluentMongoQuery {
         // Aggregates
         if let aggregates = self.aggregates() {
             pipeline.append(contentsOf: aggregates)
+        } else {
+            // Remove namespace
+            pipeline.append(["$replaceRoot": ["newRoot": "$" + self.collection] as Document])
         }
 
         return pipeline

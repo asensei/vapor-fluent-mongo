@@ -10,7 +10,7 @@ import Foundation
 import Fluent
 import MongoSwift
 
-public typealias FluentMongoQueryJoin = Document
+public typealias FluentMongoQueryJoin = [Document]
 
 public enum FluentMongoQueryJoinMethod {
     case inner
@@ -20,14 +20,34 @@ public enum FluentMongoQueryJoinMethod {
 extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQueryJoin, Self.Query == FluentMongoQuery {
 
     public static func queryJoinApply(_ join: QueryJoin, to query: inout Query) {
-        fatalError()
+        query.joins.append(contentsOf: join)
     }
 }
 
 extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQueryJoin, Self.QueryJoinMethod == FluentMongoQueryJoinMethod, Self.QueryField == FluentMongoQueryField {
 
     public static func queryJoin(_ method: QueryJoinMethod, base: QueryField, joined: QueryField) -> QueryJoin {
-        fatalError()
+        guard let collection = joined.entity else {
+            return []
+        }
+
+        let lookup: Document = [
+            "$lookup": [
+                "from": collection,
+                "localField": base.pathWithNamespace.joined(separator: "."),
+                "foreignField": joined.path.joined(separator: "."),
+                "as": collection
+            ] as Document
+        ]
+
+        let unwind: Document = [
+            "$unwind": [
+                "path": "$" + collection,
+                "preserveNullAndEmptyArrays": method == .outer
+            ] as Document
+        ]
+
+        return [lookup, unwind]
     }
 }
 

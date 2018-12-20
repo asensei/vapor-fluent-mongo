@@ -15,6 +15,7 @@ import MongoSwift
 class FluentMongoProviderTests: XCTestCase {
 
     static let allTests = [
+        ("testJoin", testJoin),
         ("testDistinct", testDistinct),
         ("testBenchmarkModels", testBenchmarkModels),
         ("testBenchmarkUpdate", testBenchmarkUpdate),
@@ -26,7 +27,10 @@ class FluentMongoProviderTests: XCTestCase {
         ("testBenchmarkAggregate", testBenchmarkAggregate),
         ("testBenchmarkLifecycle", testBenchmarkLifecycle),
         ("testBenchmarkAutoincrement", testBenchmarkAutoincrement),
-        ("testBenchmarkTimestampable", testBenchmarkTimestampable)
+        ("testBenchmarkTimestampable", testBenchmarkTimestampable),
+        ("testBenchmarkJoins", testBenchmarkJoins),
+        ("testBenchmarkReferentialActions", testBenchmarkReferentialActions),
+        ("testBenchmarkRelations", testBenchmarkRelations)
     ]
 
     var benchmarker: Benchmarker<FluentMongo.MongoDatabase>!
@@ -71,7 +75,7 @@ class FluentMongoProviderTests: XCTestCase {
             let toysFavoritedByPets = try Toy
                 .query(on: conn)
                 .key(\.name)
-                .join(Toy.idKey, to: \Pet.favoriteToyId, method: .inner)
+                .join(\Pet.favoriteToyId, to: Toy.idKey, method: .inner)
                 .all()
                 .wait()
 
@@ -82,7 +86,7 @@ class FluentMongoProviderTests: XCTestCase {
             let toysNotFavoritedByPets = try Toy
                 .query(on: conn)
                 .key(\.name)
-                .join(Toy.idKey, to: \Pet.favoriteToyId, method: .outer)
+                .join(\Pet.favoriteToyId, to: Toy.idKey, method: .outer)
                 .filter(Pet.idKey == nil)
                 .all()
                 .wait()
@@ -207,9 +211,33 @@ class FluentMongoProviderTests: XCTestCase {
         }
     }
 
-    func testBenchmarkTimestampable() throws {
+    func testBenchmarkTimestampable() {
         do {
             try self.benchmarker.benchmarkTimestampable()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkJoins() {
+        do {
+            try self.benchmarker.benchmarkJoins()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkReferentialActions() {
+        do {
+            try self.benchmarker.benchmarkReferentialActions()
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testBenchmarkRelations() {
+        do {
+            try self.benchmarker.benchmarkRelations()
         } catch {
             XCTFail(error.localizedDescription)
         }

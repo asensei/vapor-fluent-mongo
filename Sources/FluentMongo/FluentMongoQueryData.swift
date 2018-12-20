@@ -56,6 +56,17 @@ extension Database where Self: QuerySupporting, Self.QueryData == FluentMongoQue
 
 public typealias FluentMongoQueryField = FluentProperty
 
+extension FluentProperty {
+
+    var pathWithNamespace: [String] {
+        guard let entity = self.entity else {
+            return self.path
+        }
+
+        return [entity] + self.path
+    }
+}
+
 extension Database where Self: QuerySupporting, Self.QueryField == FluentProperty {
 
     public static func queryField(_ property: FluentProperty) -> QueryField {

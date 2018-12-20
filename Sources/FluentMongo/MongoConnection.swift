@@ -84,18 +84,18 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
             case .update:
                 switch (query.data, query.partialData) {
                 case (.none, .some(let document)):
-                    if let result = try collection.updateMany(filter: query.filter ?? [:], update: ["$set": document]) {
+                    if let result = try collection.updateMany(filter: self.filter(query, collection), update: ["$set": document]) {
                         self.logger?.record(query: String(describing: result))
                     }
                 case (.some(let document), .none):
-                    if let result = try collection.replaceOne(filter: query.filter ?? [:], replacement: document) {
+                    if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: document) {
                         self.logger?.record(query: String(describing: result))
                     }
                 default:
                     throw Error.invalidQuery(query)
                 }
             case .delete:
-                if let result = try collection.deleteMany(query.filter ?? [:]) {
+                if let result = try collection.deleteMany(self.filter(query, collection)) {
                     self.logger?.record(query: String(describing: result))
                 }
             }
@@ -104,6 +104,20 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
         } catch {
             return self.worker.future(error: error)
         }
+    }
+
+    private func filter(_ query: Database.Query, _ collection: MongoCollection<Document>) throws -> FluentMongoQueryFilter {
+
+        guard let filter = query.filter, !filter.isEmpty else {
+            return [:]
+        }
+
+        var pipeline = query.aggregationPipeline()
+        pipeline.append(["$project": ["_id": true] as Document])
+        let cursor = try collection.aggregate(pipeline)
+        let identifiers = cursor.compactMap { $0["_id"] }
+
+        return ["_id": ["$in": identifiers] as Document]
     }
 }
 

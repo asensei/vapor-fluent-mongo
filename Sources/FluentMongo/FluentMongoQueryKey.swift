@@ -13,12 +13,12 @@ import Fluent
 
 public indirect enum FluentMongoQueryKey {
     case all
-    case raw(String)
+    case raw(FluentMongoQueryField)
     case computed(FluentMongoQueryAggregate, [FluentMongoQueryKey])
 
     public typealias Computed = (aggregate: FluentMongoQueryAggregate, keys: [FluentMongoQueryKey])
 
-    public var raw: String? {
+    public var raw: FluentMongoQueryField? {
         switch self {
         case .raw(let value):
             return value
@@ -39,7 +39,7 @@ public indirect enum FluentMongoQueryKey {
 
 extension Array where Element == FluentMongoQueryKey {
 
-    public var raw: [String] {
+    public var raw: [FluentMongoQueryField] {
         return self.compactMap { $0.raw }
     }
 
@@ -58,7 +58,7 @@ extension Database where Self: QuerySupporting, Self.QueryKey == FluentMongoQuer
 extension Database where Self: QuerySupporting, Self.QueryKey == FluentMongoQueryKey, Self.QueryField == FluentMongoQueryField {
 
     public static func queryKey(_ field: QueryField) -> QueryKey {
-        return .raw(field.path.joined(separator: "."))
+        return .raw(field)
     }
 }
 

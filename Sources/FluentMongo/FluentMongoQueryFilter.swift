@@ -14,7 +14,7 @@ import MongoSwift
 
 public typealias FluentMongoQueryFilter = Document
 
-extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQueryFilter, Self.QueryField == FluentProperty, Self.QueryFilterMethod == FluentMongoQueryFilterMethod, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
+extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQueryFilter, Self.QueryField == FluentMongoQueryField, Self.QueryFilterMethod == FluentMongoQueryFilterMethod, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
 
     public static func queryFilter(_ field: QueryField, _ method: QueryFilterMethod, _ value: QueryFilterValue) -> QueryFilter {
         var document = Document()
@@ -33,7 +33,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
             unwrappedValue = value ?? []
         }
 
-        document[field.path] = [method.rawValue: unwrappedValue] as Document
+        document[field.pathWithNamespace.joined(separator: ".")] = [method.rawValue: unwrappedValue] as Document
 
         return document
     }
