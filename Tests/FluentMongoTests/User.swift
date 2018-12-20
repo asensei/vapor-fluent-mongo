@@ -9,14 +9,14 @@
 import Foundation
 import FluentMongo
 
-final class User: FluentMongoModel {
+final class User: FluentMongoModel, Model {
 
     typealias Database = MongoDatabase
 
     typealias ID = UUID
 
     var _id: UUID?
-    var name: String = ""
+    var name: String
     var age: Int?
 
     init(_id: UUID? = nil, name: String, age: Int? = nil) {

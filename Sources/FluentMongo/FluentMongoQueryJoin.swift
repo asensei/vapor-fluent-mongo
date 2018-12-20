@@ -12,7 +12,10 @@ import MongoSwift
 
 public typealias FluentMongoQueryJoin = Document
 
-public typealias FluentMongoQueryJoinMethod = Document
+public enum FluentMongoQueryJoinMethod {
+    case inner
+    case outer
+}
 
 extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQueryJoin, Self.Query == FluentMongoQuery {
 
@@ -31,6 +34,6 @@ extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQuer
 extension Database where Self: JoinSupporting, Self.QueryJoinMethod == FluentMongoQueryJoinMethod {
 
     public static var queryJoinMethodDefault: QueryJoinMethod {
-        fatalError()
+        return .inner
     }
 }

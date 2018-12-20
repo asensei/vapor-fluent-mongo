@@ -8,10 +8,11 @@
 
 import Foundation
 import Fluent
-
+/*
 extension MongoDatabase: JoinSupporting {
 
     public typealias QueryJoin = FluentMongoQueryJoin
 
     public typealias QueryJoinMethod = FluentMongoQueryJoinMethod
 }
+*/

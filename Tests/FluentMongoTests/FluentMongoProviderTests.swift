@@ -9,6 +9,7 @@
 import XCTest
 import Fluent
 import FluentBenchmark
+import MongoSwift
 @testable import FluentMongo
 
 class FluentMongoProviderTests: XCTestCase {
@@ -28,9 +29,9 @@ class FluentMongoProviderTests: XCTestCase {
         ("testBenchmarkTimestampable", testBenchmarkTimestampable)
     ]
 
-    var benchmarker: Benchmarker<MongoDatabase>!
+    var benchmarker: Benchmarker<FluentMongo.MongoDatabase>!
 
-    var database: MongoDatabase!
+    var database: FluentMongo.MongoDatabase!
 
     override func setUp() {
         let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -44,6 +45,53 @@ class FluentMongoProviderTests: XCTestCase {
             try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
             self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testJoin() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+
+            let ball = try Toy(name: "ball").save(on: conn).wait()
+            let bone = try Toy(name: "bone").save(on: conn).wait()
+            let puppet = try Toy(name: "puppet").save(on: conn).wait()
+
+            let molly = try Pet(name: "Molly", age: 2, favoriteToyId: ball.requireID())
+                .save(on: conn)
+                .wait()
+            let rex = try Pet(name: "Rex", age: 1).save(on: conn).wait()
+
+            // Relationships
+            XCTAssertNotNil(try molly.favoriteToy?.get(on: conn).wait())
+            XCTAssertNil(try rex.favoriteToy?.get(on: conn).wait())
+
+            // Inner Join
+            let toysFavoritedByPets = try Toy
+                .query(on: conn)
+                .key(\.name)
+                .join(Toy.idKey, to: \Pet.favoriteToyId, method: .inner)
+                .all()
+                .wait()
+
+            XCTAssertEqual(toysFavoritedByPets.count, 1)
+            XCTAssertEqual(toysFavoritedByPets.first?._id, ball._id)
+
+            // Outer Join
+            let toysNotFavoritedByPets = try Toy
+                .query(on: conn)
+                .key(\.name)
+                .join(Toy.idKey, to: \Pet.favoriteToyId, method: .outer)
+                .filter(Pet.idKey == nil)
+                .all()
+                .wait()
+                //.filter(Pet.self, Pet.idKey, .equals, nil)
+                //.all([.raw("name", [])])
+
+            XCTAssertEqual(toysNotFavoritedByPets.count, 2)
+            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0._id == bone._id }))
+            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0._id == puppet._id }))
         } catch {
             XCTFail(error.localizedDescription)
         }

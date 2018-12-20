@@ -9,11 +9,14 @@
 import Foundation
 import Fluent
 
-public protocol FluentMongoModel: Model where Database == MongoDatabase {
+public protocol FluentMongoModel {
+
+    associatedtype ID: Fluent.ID
+
     var _id: ID? { get set }
 }
 
-public extension FluentMongoModel {
+public extension FluentMongoModel where Self: Model {
     public static var idKey: WritableKeyPath<Self, ID?> {
         return \._id
     }
