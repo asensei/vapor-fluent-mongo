@@ -15,9 +15,10 @@ import MongoSwift
 class FluentMongoProviderTests: XCTestCase {
 
     static let allTests = [
+        ("testModels", testModels),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
-        ("testBenchmarkModels", testBenchmarkModels),
+        //("testBenchmarkModels", testBenchmarkModels),
         ("testBenchmarkUpdate", testBenchmarkUpdate),
         ("testBenchmarkBugs", testBenchmarkBugs),
         ("testBenchmarkSort", testBenchmarkSort),
@@ -47,6 +48,49 @@ class FluentMongoProviderTests: XCTestCase {
             try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
             self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    // Can be replaced with testBenchmarkModels once https://github.com/vapor/fluent/pull/603 is fixed
+    func testModels() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+
+            // create
+            let a = try User(name: "asdf", age: 42).save(on: conn).wait()
+            let b = try User(name: "asdf", age: 42).save(on: conn).wait()
+
+            XCTAssertEqual(try User.query(on: conn).count().wait(), 2)
+
+            // update
+            b.name = "fdsa"
+            _ = try b.save(on: conn).wait()
+            _ = try User.query(on: conn).filter(\User._id == a._id).update(\.age, to: 314).run().wait()
+
+            // read
+            XCTAssertEqual(try User.find(b.requireID(), on: conn).wait()?.name, "fdsa")
+
+            // make sure that AND queries work as expected - this query should return exactly one result
+            XCTAssertEqual(try User.query(on: conn)
+                .group(.and) { and in
+                    and.filter(\User.name == "asdf")
+                    and.filter(\User.age == 314)
+                }
+                .all().wait().count, 1)
+
+            // make sure that OR queries work as expected - this query should return exactly two results
+            XCTAssertEqual(try User.query(on: conn)
+                .group(.or) { or in
+                    or.filter(\User.name == "asdf")
+                    or.filter(\User.name == "fdsa")
+                }
+                .all().wait().count, 2)
+
+            // delete
+            XCTAssertNoThrow(try b.delete(on: conn).wait())
+            XCTAssertEqual(try User.query(on: conn).count().wait(), 1)
         } catch {
             XCTFail(error.localizedDescription)
         }
@@ -128,14 +172,15 @@ class FluentMongoProviderTests: XCTestCase {
         }
     }
 
+    /*
     func testBenchmarkModels() {
         do {
-            // TODO: https://github.com/vapor/fluent/pull/603
+            https://github.com/vapor/fluent/pull/603
             try self.benchmarker.benchmarkModels()
         } catch {
             XCTFail(error.localizedDescription)
         }
-    }
+    }*/
 
     func testBenchmarkUpdate() {
         do {

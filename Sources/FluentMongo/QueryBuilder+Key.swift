@@ -9,7 +9,7 @@
 import Foundation
 import Fluent
 
-// TODO: https://github.com/vapor/fluent/pull/601
+// Duplicates https://github.com/vapor/fluent/pull/601
 public extension QueryBuilder {
     // MARK: Key
 
