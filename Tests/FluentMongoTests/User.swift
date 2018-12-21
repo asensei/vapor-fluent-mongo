@@ -26,3 +26,19 @@ final class User: FluentMongoModel, Model {
         self.age = age
     }
 }
+
+extension User {
+
+    class SetAgeMigration: Migration {
+
+        typealias Database = MongoDatabase
+
+        static func prepare(on conn: Database.Connection) -> Future<Void> {
+            return User.query(on: conn).update(\.age, to: 99).run()
+        }
+
+        static func revert(on conn: Database.Connection) -> Future<Void> {
+            return User.query(on: conn).update(\.age, to: nil).run()
+        }
+    }
+}

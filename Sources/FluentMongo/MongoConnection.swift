@@ -11,7 +11,7 @@ import MongoSwift
 import Fluent
 
 /// A Mongo frontend client.
-public final class MongoConnection: BasicWorker, DatabaseConnection {
+public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQueryable {
 
     public required init(config: MongoDatabaseConfig, on worker: Worker) throws {
         self.config = config
@@ -25,7 +25,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
 
     private let worker: Worker
 
-    private let client: MongoClient
+    let client: MongoClient
 
     /// See `Worker`.
     public var eventLoop: EventLoop {
@@ -118,6 +118,62 @@ public final class MongoConnection: BasicWorker, DatabaseConnection {
         let identifiers = cursor.compactMap { $0["_id"] }
 
         return ["_id": ["$in": identifiers] as Document]
+    }
+}
+
+// MARK: - Internal Indexing Helpers
+
+extension MongoConnection {
+
+    func createIndex(_ index: IndexModel, in collection: String) -> Future<Void> {
+        do {
+            guard !index.keys.isEmpty else {
+                throw IndexBuilderError.invalidKeys
+            }
+
+            self.logger?.record(query: "MongoConnection.createIndex")
+            let database = try self.client.db(config.database)
+            let collection = MigrationLog<MongoDatabase>.entity
+            self.logger?.record(query: "Create index on \(collection)")
+            _ = try database.collection(collection).createIndex(index)
+
+            return self.worker.future()
+        } catch {
+            return self.worker.future(error: error)
+        }
+    }
+}
+
+// MARK: - Internal MigrationSupporting Helpers
+
+extension MongoConnection {
+
+    func prepareMigrationMetadata() -> Future<Void> {
+        do {
+            self.logger?.record(query: "MongoConnection.prepareMigrationMetadata")
+            let database = try self.client.db(config.database)
+            let collection = MigrationLog<MongoDatabase>.entity
+            self.logger?.record(query: "Create collection: \(collection)")
+            _ = try database.createCollection(collection)
+
+            return self.worker.future()
+        } catch {
+            return self.worker.future(error: error)
+        }
+    }
+
+    func revertMigrationMetadata() -> Future<Void> {
+        do {
+            self.logger?.record(query: "MongoConnection.revertMigrationMetadata")
+            let database = try self.client.db(config.database)
+            let collection = MigrationLog<MongoDatabase>.entity
+            self.logger?.record(query: "Drop collection: \(collection)")
+            _ = try database.collection(collection).drop()
+
+            return self.worker.future()
+        } catch {
+            return self.worker.future(error: error)
+        }
     }
 }
 

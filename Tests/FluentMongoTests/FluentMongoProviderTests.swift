@@ -18,6 +18,7 @@ class FluentMongoProviderTests: XCTestCase {
         ("testModels", testModels),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
+        ("testMigration", testMigration),
         //("testBenchmarkModels", testBenchmarkModels),
         ("testBenchmarkUpdate", testBenchmarkUpdate),
         ("testBenchmarkBugs", testBenchmarkBugs),
@@ -167,6 +168,26 @@ class FluentMongoProviderTests: XCTestCase {
             XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 20 }))
             XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 19 }))
             XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Charlie" && $0.age == 20 }))
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testMigration() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+            try MongoDatabase.prepareMigrationMetadata(on: conn).wait()
+            _ = try User(name: "Alice", age: 20).save(on: conn).wait()
+            _ = try User(name: "Bob", age: 20).save(on: conn).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: conn).wait()
+            _ = try User(name: "Bob", age: 19).save(on: conn).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: conn).wait()
+
+            try User.SetAgeMigration.prepare(on: conn).wait()
+            XCTAssertEqual(try User.query(on: conn).filter(\.age == 99).count().wait(), 5)
+            try User.SetAgeMigration.revert(on: conn).wait()
+            XCTAssertEqual(try User.query(on: conn).filter(\.age == nil).count().wait(), 5)
+            try MongoDatabase.revertMigrationMetadata(on: conn).wait()
         } catch {
             XCTFail(error.localizedDescription)
         }
