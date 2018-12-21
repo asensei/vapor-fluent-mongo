@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Fluent
 import FluentMongo
 
 final class Toy: FluentMongoModel, Model {
