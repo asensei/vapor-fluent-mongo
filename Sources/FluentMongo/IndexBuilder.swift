@@ -30,14 +30,16 @@ public extension IndexBuilder {
         }
     }
 
-    public func drop() {
-        // TODO: Implement drop index
+    public func drop() -> Future<Void> {
+        return self.connection.flatMap { conn in
+            return conn.dropIndex(self.index, in: T.entity)
+        }
     }
 }
 
 public extension IndexBuilder {
 
-    public func index<V>(_ key: KeyPath<T, V>, _ direction: FluentMongoQuerySortDirection = .ascending) -> IndexBuilder<T> {
+    public func key<V>(_ key: KeyPath<T, V>, _ direction: FluentMongoQuerySortDirection = .ascending) -> IndexBuilder<T> {
         let property: FluentProperty = .keyPath(key)
         var keys = self.index.keys
         keys[property.path] = direction.rawValue

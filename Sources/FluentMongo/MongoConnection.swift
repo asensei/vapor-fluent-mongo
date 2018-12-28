@@ -130,12 +130,27 @@ extension MongoConnection {
             guard !index.keys.isEmpty else {
                 throw IndexBuilderError.invalidKeys
             }
-
             self.logger?.record(query: "MongoConnection.createIndex")
             let database = try self.client.db(config.database)
-            let collection = MigrationLog<MongoDatabase>.entity
             self.logger?.record(query: "Create index on \(collection)")
             _ = try database.collection(collection).createIndex(index)
+
+            return self.worker.future()
+        } catch {
+            return self.worker.future(error: error)
+        }
+    }
+
+    func dropIndex(_ index: IndexModel, in collection: String) -> Future<Void> {
+        do {
+            guard !index.keys.isEmpty else {
+                throw IndexBuilderError.invalidKeys
+            }
+
+            self.logger?.record(query: "MongoConnection.dropIndex")
+            let database = try self.client.db(config.database)
+            self.logger?.record(query: "Drop index on \(collection)")
+            _ = try database.collection(collection).dropIndex(index)
 
             return self.worker.future()
         } catch {

@@ -15,6 +15,7 @@ import MongoSwift
 class FluentMongoProviderTests: XCTestCase {
 
     static let allTests = [
+        ("testIndex", testIndex),
         ("testModels", testModels),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
@@ -49,6 +50,19 @@ class FluentMongoProviderTests: XCTestCase {
             try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
             self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testIndex() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+            try User.index(on: conn).key(\.name, .descending).unique(true).create().wait()
+            XCTAssertNoThrow(try User(name: "asdf", age: 42).save(on: conn).wait())
+            XCTAssertThrowsError(try User(name: "asdf", age: 58).save(on: conn).wait())
+            try User.index(on: conn).key(\.name, .descending).drop().wait()
+            XCTAssertNoThrow(try User(name: "asdf", age: 58).save(on: conn).wait())
         } catch {
             XCTFail(error.localizedDescription)
         }
