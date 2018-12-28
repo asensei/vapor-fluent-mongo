@@ -1,9 +1,15 @@
-# vapor-auth-jwt
+# vapor-fluent-mongo
 
 ![Swift](https://img.shields.io/badge/swift-4.2-orange.svg)
 [![Build Status](https://travis-ci.com/asensei/vapor-fluent-mongo.svg?token=eSrCssnzja3G3GciyhUB&branch=master)](https://travis-ci.com/asensei/vapor-fluent-mongo)
 
 Mongo driver for Fluent `3.x`.
+
+## Environment Variables
+
+| Name    | Required | Default | Value (e.g.) | Description |
+| ------------- |:-------------:|:-------------:|:-------------:|:-------------|
+| `FLUENT_MONGO_CONNECTION_URL` | ✔ | `-` | `mongodb://127.0.0.1:27017/vapor` | Mongo connection string. |
 
 ## Getting Started
 
@@ -16,7 +22,7 @@ On a Mac, you can install both components at once using [Homebrew](https://brew.
 On Linux: please follow the [instructions](http://mongoc.org/libmongoc/current/installing.html#building-on-unix) from `libmongoc`'s documentation. Note that the versions provided by your package manager may be too old, in which case you can follow the instructions for building and installing from source.
 
 
-### Install MongoSwift
+### Install FluentMongo
 
 *Please follow the instructions in the previous section on installing the MongoDB C Driver before proceeding.*
 
