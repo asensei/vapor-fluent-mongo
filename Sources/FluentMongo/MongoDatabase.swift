@@ -8,6 +8,7 @@
 
 import Foundation
 import Fluent
+import MongoSwift
 
 /// Creates connections to an identified Mongo database.
 public final class MongoDatabase: Database {
@@ -23,6 +24,17 @@ public final class MongoDatabase: Database {
     public func newConnection(on worker: Worker) -> Future<MongoConnection> {
         return MongoConnection.connect(config: self.config, on: worker)
     }
+}
+
+extension MongoDatabase: BSONCoder {
+
+    public static var encoder: BSONEncoder = {
+        return BSONEncoder()
+    }()
+
+    public static var decoder: BSONDecoder = {
+        return BSONDecoder()
+    }()
 }
 
 extension DatabaseIdentifier {

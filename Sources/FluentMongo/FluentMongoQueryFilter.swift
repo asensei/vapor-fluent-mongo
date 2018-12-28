@@ -111,10 +111,10 @@ extension Database where Self: QuerySupporting, Self.QueryFilterMethod == Fluent
 
 public typealias FluentMongoQueryFilterValue = [BSONValue]
 
-extension Database where Self: QuerySupporting, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
+extension Database where Self: BSONCoder, Self: QuerySupporting, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
 
     public static func queryFilterValue<E: Encodable>(_ encodables: [E]) -> QueryFilterValue {
-        let encoder = BSONEncoder()
+        let encoder = Self.encoder
         let value: [BSONValue] = encodables.compactMap { try? encoder.encodeBSONValue($0) }
 
         return value

@@ -14,10 +14,10 @@ import MongoSwift
 
 public typealias FluentMongoQueryData = Document
 
-extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryData == FluentMongoQueryData, Self.QueryField == FluentMongoQueryField {
+extension Database where Self: BSONCoder, Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryData == FluentMongoQueryData, Self.QueryField == FluentMongoQueryField {
 
     public static func queryDataSet<E: Encodable>(_ field: QueryField, to data: E, on query: inout Query) {
-        guard let value: BSONValue = try? BSONEncoder().encodeBSONValue(data) else {
+        guard let value: BSONValue = try? Self.encoder.encodeBSONValue(data) else {
             return
         }
 
@@ -34,21 +34,21 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
     }
 }
 
-extension Database where Self: QuerySupporting, Self.Output == FluentMongoOutput {
+extension Database where Self: BSONCoder, Self: QuerySupporting, Self.Output == FluentMongoOutput {
 
     public static func queryDecode<D: Decodable>(_ output: Output, entity: String, as decodable: D.Type, on conn: Connection) -> Future<D> {
         do {
-            return conn.future(try BSONDecoder().decode(D.self, from: output))
+            return conn.future(try Self.decoder.decode(D.self, from: output))
         } catch {
             return conn.future(error: error)
         }
     }
 }
 
-extension Database where Self: QuerySupporting, Self.QueryData == FluentMongoQueryData {
+extension Database where Self: BSONCoder, Self: QuerySupporting, Self.QueryData == FluentMongoQueryData {
 
     public static func queryEncode<E: Encodable>(_ encodable: E, entity: String) throws -> QueryData {
-        return try BSONEncoder().encode(encodable)
+        return try Self.encoder.encode(encodable)
     }
 }
 
