@@ -11,8 +11,8 @@ before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       SWIFT_VERSION=$(<.swift-version);
       docker pull swift:${SWIFT_VERSION};
-      docker pull mongo:3.6.8;
-      docker run -d -p 27017:27017 mongo:3.6.8;
+      docker pull mongo:4.0.5;
+      docker run -d -p 27017:27017 mongo:4.0.5;
     elif [ $TRAVIS_OS_NAME == "osx" ]; then
       rvm use 2.5.1 --install --binary --fuzzy;
       ruby --version;
