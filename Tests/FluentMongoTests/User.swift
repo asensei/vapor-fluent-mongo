@@ -19,11 +19,23 @@ final class User: FluentMongoModel, Model {
     var _id: UUID?
     var name: String
     var age: Int?
+    var nicknames: Set<String>?
 
-    init(_id: UUID? = nil, name: String, age: Int? = nil) {
+    init(_id: UUID? = nil, name: String, age: Int? = nil, nicknames: Set<String>? = nil) {
         self._id = _id
         self.name = name
         self.age = age
+        self.nicknames = nicknames
+    }
+}
+
+extension User: Equatable {
+    static func == (lhs: User, rhs: User) -> Bool {
+        guard let lhsId = lhs._id, let rhsId = rhs._id else {
+            return false
+        }
+
+        return lhsId == rhsId
     }
 }
 
