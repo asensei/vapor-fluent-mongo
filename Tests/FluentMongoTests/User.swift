@@ -29,6 +29,16 @@ final class User: FluentMongoModel, Model {
     }
 }
 
+extension User: Equatable {
+    static func == (lhs: User, rhs: User) -> Bool {
+        guard let lhsId = lhs._id, let rhsId = rhs._id else {
+            return false
+        }
+
+        return lhsId == rhsId
+    }
+}
+
 extension User {
 
     class SetAgeMigration: Migration {

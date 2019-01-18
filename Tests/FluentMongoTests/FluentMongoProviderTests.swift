@@ -129,13 +129,15 @@ class FluentMongoProviderTests: XCTestCase {
             let r2 = try User.query(on: conn).filter(\.nicknames, .inSubset, "a").all().wait()
             XCTAssertEqual(r2.count, 1)
             XCTAssertEqual(r2.first?.name, "User1")
+            XCTAssertEqual(try User.query(on: conn).filter(\.nicknames ~~ "a").all().wait(), r2)
 
             let r3 = try User.query(on: conn).filter(\.nicknames, .inSubset, "b").all().wait()
             XCTAssertEqual(r3.count, 2)
+            XCTAssertEqual(try User.query(on: conn).filter(\.nicknames ~~ "b").all().wait(), r3)
 
             let r4 = try User.query(on: conn).filter(\.nicknames, .inSubset, ["a", "b"]).all().wait()
             XCTAssertEqual(r4.count, 2)
-
+            XCTAssertEqual(try User.query(on: conn).filter(\.nicknames ~~ ["a", "b"]).all().wait(), r4)
         } catch {
             XCTFail(error.localizedDescription)
         }
