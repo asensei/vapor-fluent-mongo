@@ -101,8 +101,16 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
             }
 
             return self.worker.future()
+        } catch let error as MongoError {
+            switch error {
+            // TODO: update this as soon as https://github.com/mongodb/mongo-swift-driver/issues/200 is fixed.
+            case .commandError(let message) where message.hasPrefix("E11000"):
+                return self.worker.future(error: Error.duplicatedKey(message))
+            default:
+                return self.worker.future(error: Error.underlyingDriverError(error))
+            }
         } catch {
-            return self.worker.future(error: error)
+            return self.worker.future(error: Error.underlyingDriverError(error))
         }
     }
 
@@ -195,5 +203,18 @@ extension MongoConnection {
 public extension MongoConnection {
     public enum Error: Swift.Error {
         case invalidQuery(Database.Query)
+        case duplicatedKey(String)
+        case underlyingDriverError(Swift.Error)
+
+        var localizedDescription: String {
+            switch self {
+            case .invalidQuery(let query):
+                return "Invalid query. \(String(describing: query))"
+            case .duplicatedKey(let message):
+                return "Duplicated key. \(message)"
+            case .underlyingDriverError(let error):
+                return error.localizedDescription
+            }
+        }
     }
 }
