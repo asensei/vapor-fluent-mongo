@@ -13,4 +13,8 @@ extension Model where Database == MongoDatabase {
     public static func index(on conn: Database.Connection) -> IndexBuilder<Self> {
         return IndexBuilder(on: conn.databaseConnection(to: Self.defaultDatabase))
     }
+
+    public static func index(on conn: DatabaseConnectable) -> IndexBuilder<Self> {
+        return IndexBuilder(on: conn.databaseConnection(to: Self.defaultDatabase))
+    }
 }
