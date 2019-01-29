@@ -112,6 +112,24 @@ class FluentMongoProviderTests: XCTestCase {
         }
     }
 
+    func testError() throws {
+        let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+
+        let uuid = UUID()
+        XCTAssertNoThrow(try User(_id: uuid, name: "asdf", age: 42).create(on: conn).wait())
+
+        XCTAssertThrowsError(try User(_id: uuid, name: "asdf", age: 42).create(on: conn).wait(), "duplicatedKey") { error in
+            guard
+                let connectionError = error as? MongoConnection.Error,
+                case .duplicatedKey = connectionError
+                else {
+                    XCTFail("\(error) is not equal to MongoConnection.Error.duplicatedKey")
+
+                    return
+            }
+        }
+    }
+
     func testFilterCollectionInSubset() {
         do {
             let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
