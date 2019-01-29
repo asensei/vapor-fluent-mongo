@@ -17,6 +17,7 @@ class FluentMongoProviderTests: XCTestCase {
     static let allTests = [
         ("testIndex", testIndex),
         ("testModels", testModels),
+        ("testError", testError),
         ("testFilterCollectionInSubset", testFilterCollectionInSubset),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
