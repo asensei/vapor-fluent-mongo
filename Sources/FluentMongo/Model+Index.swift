@@ -18,3 +18,20 @@ extension Model where Database == MongoDatabase {
         return IndexBuilder(on: conn.databaseConnection(to: Self.defaultDatabase))
     }
 }
+
+extension Future where T: Model, T.Database == MongoDatabase {
+
+    @discardableResult
+    public func mapIfDuplicatedKeyError(_ callback: @escaping (MongoConnection.Error) throws -> T) -> Future<T> {
+        return self.catchMap { error in
+            guard
+                let mongoConnectionError = error as? MongoConnection.Error,
+                case .duplicatedKey = mongoConnectionError
+                else {
+                    throw error
+            }
+
+            return try callback(mongoConnectionError)
+        }
+    }
+}
