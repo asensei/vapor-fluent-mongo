@@ -12,6 +12,8 @@ import FluentMongo
 
 final class User: FluentMongoModel, Model {
 
+    //static let updatedAtKey: TimestampKey? = \.updatedAt
+
     typealias Database = MongoDatabase
 
     typealias ID = UUID
@@ -20,6 +22,7 @@ final class User: FluentMongoModel, Model {
     var name: String
     var age: Int?
     var nicknames: Set<String>?
+    var updatedAt: Date?
 
     init(_id: UUID? = nil, name: String, age: Int? = nil, nicknames: Set<String>? = nil) {
         self._id = _id

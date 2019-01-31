@@ -25,6 +25,7 @@ public struct FluentMongoQuery {
     public var defaultFilterRelation: FluentMongoQueryFilterRelation
     public var data: FluentMongoQueryData?
     public var partialData: FluentMongoQueryData?
+    public var partialCustomData: FluentMongoQueryData?
     public var skip: Int64?
     public var limit: Int64?
     public var sort: FluentMongoQuerySort?
@@ -39,6 +40,7 @@ public struct FluentMongoQuery {
         defaultFilterRelation: FluentMongoQueryFilterRelation = .and,
         data: FluentMongoQueryData? = nil,
         partialData: FluentMongoQueryData? = nil,
+        partialCustomData: FluentMongoQueryData? = nil,
         skip: Int64? = nil,
         limit: Int64? = nil,
         sort: FluentMongoQuerySort? = nil
@@ -52,6 +54,7 @@ public struct FluentMongoQuery {
         self.defaultFilterRelation = defaultFilterRelation
         self.data = data
         self.partialData = partialData
+        self.partialCustomData = partialCustomData
         self.skip = skip
         self.limit = limit
         self.sort = sort

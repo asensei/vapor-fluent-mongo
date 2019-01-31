@@ -82,13 +82,15 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
                     }
                 }
             case .update:
-                switch (query.data, query.partialData) {
-                case (.none, .some(let document)):
-                    if let result = try collection.updateMany(filter: self.filter(query, collection), update: ["$set": document]) {
+                switch (query.data, query.partialData != nil || query.partialCustomData != nil) {
+                case (.none, true):
+                    var document = query.partialCustomData ?? Document()
+                    document["$set"] = query.partialData
+                    if let result = try collection.updateMany(filter: self.filter(query, collection), update: document) {
                         self.logger?.record(query: String(describing: result))
                     }
-                case (.some(let document), .none):
-                    if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: document) {
+                case (.some(let data), false):
+                    if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: data) {
                         self.logger?.record(query: String(describing: result))
                     }
                 default:
