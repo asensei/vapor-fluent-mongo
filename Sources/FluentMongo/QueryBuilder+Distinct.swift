@@ -11,6 +11,7 @@ import Fluent
 
 extension QueryBuilder where Database.Query == FluentMongoQuery {
 
+    @discardableResult
     public func distinct(_ value: Bool = true) -> Self {
         self.query.isDistinct = value
 
