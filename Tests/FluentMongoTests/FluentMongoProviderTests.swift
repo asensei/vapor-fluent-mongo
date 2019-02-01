@@ -20,6 +20,7 @@ class FluentMongoProviderTests: XCTestCase {
         ("testError", testError),
         ("testFilterCollectionInSubset", testFilterCollectionInSubset),
         ("testAddToSet", testAddToSet),
+        ("testPullAll", testPullAll),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
         ("testMigration", testMigration),
@@ -178,6 +179,30 @@ class FluentMongoProviderTests: XCTestCase {
 
             XCTAssertEqual(alice.nicknames, ["al"])
             XCTAssertEqual(bob.nicknames, ["a", "b", "c"])
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testPullAll() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+
+            var alice = try User(name: "Alice", age: 42).create(on: conn).wait()
+            var bob = try User(name: "Bob", age: 42, nicknames: ["a", "b", "c"]).create(on: conn).wait()
+            var charlie = try User(name: "Charlie", age: 42, nicknames: ["d", "e", "f", "e"]).create(on: conn).wait()
+
+            XCTAssertNoThrow(try User.query(on: conn).filter(\._id == alice.requireID()).update(\.nicknames, pullAll: ["al"]).run().wait())
+            XCTAssertNoThrow(try User.query(on: conn).filter(\._id == bob.requireID()).update(\.nicknames, pullAll: ["a", "b", "c"]).run().wait())
+            XCTAssertNoThrow(try User.query(on: conn).filter(\._id == charlie.requireID()).update(\.nicknames, pullAll: ["d", "e"]).run().wait())
+
+            alice = try User.find(alice.requireID(), on: conn).wait()!
+            bob = try User.find(bob.requireID(), on: conn).wait()!
+            charlie = try User.find(charlie.requireID(), on: conn).wait()!
+
+            XCTAssertNil(alice.nicknames)
+            XCTAssertEqual(bob.nicknames, [])
+            XCTAssertEqual(charlie.nicknames, ["f"])
         } catch {
             XCTFail(error.localizedDescription)
         }
