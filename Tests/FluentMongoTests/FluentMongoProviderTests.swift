@@ -21,6 +21,7 @@ class FluentMongoProviderTests: XCTestCase {
         ("testError", testError),
         ("testFilterCollectionInSubset", testFilterCollectionInSubset),
         ("testAddToSet", testAddToSet),
+        ("testPush", testPush),
         ("testPullAll", testPullAll),
         ("testJoin", testJoin),
         ("testDistinct", testDistinct),
@@ -193,6 +194,26 @@ class FluentMongoProviderTests: XCTestCase {
 
             XCTAssertEqual(alice.nicknames, ["al"])
             XCTAssertEqual(bob.nicknames, ["a", "b", "c"])
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testPush() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+
+            var alice = try User(name: "Alice", age: 42).create(on: conn).wait()
+            var bob = try User(name: "Bob", age: 42, names: ["b"]).create(on: conn).wait()
+
+            XCTAssertNoThrow(try User.query(on: conn).filter(\._id == alice.requireID()).update(\.names, push: ["al"]).run().wait())
+            XCTAssertNoThrow(try User.query(on: conn).filter(\._id == bob.requireID()).update(\.names, push: ["a", "b", "c"]).run().wait())
+
+            alice = try User.find(alice.requireID(), on: conn).wait()!
+            bob = try User.find(bob.requireID(), on: conn).wait()!
+
+            XCTAssertEqual(alice.names, ["al"])
+            XCTAssertEqual(bob.names, ["b", "a", "b", "c"])
         } catch {
             XCTFail(error.localizedDescription)
         }

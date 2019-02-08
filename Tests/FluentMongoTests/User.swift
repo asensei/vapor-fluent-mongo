@@ -21,6 +21,7 @@ final class User: FluentMongoModel, Model {
     var _id: UUID?
     var name: String
     var age: Int?
+    var names: [String]?
     var nicknames: Set<String>?
     var updatedAt: Date?
     var nested: Nested?
@@ -29,10 +30,11 @@ final class User: FluentMongoModel, Model {
         let p1: String
     }
 
-    init(_id: UUID? = nil, name: String, age: Int? = nil, nicknames: Set<String>? = nil, nested: Nested? = nil) {
+    init(_id: UUID? = nil, name: String, age: Int? = nil, names: [String]? = nil, nicknames: Set<String>? = nil, nested: Nested? = nil) {
         self._id = _id
         self.name = name
         self.age = age
+        self.names = names
         self.nicknames = nicknames
         self.nested = nested
     }
