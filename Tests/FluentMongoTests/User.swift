@@ -23,12 +23,18 @@ final class User: FluentMongoModel, Model {
     var age: Int?
     var nicknames: Set<String>?
     var updatedAt: Date?
+    var nested: Nested?
 
-    init(_id: UUID? = nil, name: String, age: Int? = nil, nicknames: Set<String>? = nil) {
+    struct Nested: Codable {
+        let p1: String
+    }
+
+    init(_id: UUID? = nil, name: String, age: Int? = nil, nicknames: Set<String>? = nil, nested: Nested? = nil) {
         self._id = _id
         self.name = name
         self.age = age
         self.nicknames = nicknames
+        self.nested = nested
     }
 }
 

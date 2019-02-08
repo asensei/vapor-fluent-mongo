@@ -16,6 +16,7 @@ class FluentMongoProviderTests: XCTestCase {
 
     static let allTests = [
         ("testIndex", testIndex),
+        ("testNestedIndex", testNestedIndex),
         ("testModels", testModels),
         ("testError", testError),
         ("testFilterCollectionInSubset", testFilterCollectionInSubset),
@@ -67,6 +68,19 @@ class FluentMongoProviderTests: XCTestCase {
             XCTAssertThrowsError(try User(name: "asdf", age: 58).save(on: conn).wait())
             try User.index(on: conn).key(\.name, .descending).drop().wait()
             XCTAssertNoThrow(try User(name: "asdf", age: 58).save(on: conn).wait())
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testNestedIndex() {
+        do {
+            let conn = try self.database.newConnection(on: MultiThreadedEventLoopGroup(numberOfThreads: 1)).wait()
+            try User.index(on: conn).key(\.nested?.p1, .descending).unique(true).create().wait()
+            XCTAssertNoThrow(try User(name: "a", nested: .init(p1: "a")).save(on: conn).wait())
+            XCTAssertThrowsError(try User(name: "b", nested: .init(p1: "a")).save(on: conn).wait())
+            try User.index(on: conn).key(\.nested?.p1, .descending).drop().wait()
+            XCTAssertNoThrow(try User(name: "c", nested: .init(p1: "a")).save(on: conn).wait())
         } catch {
             XCTFail(error.localizedDescription)
         }
