@@ -22,7 +22,21 @@ extension Model where Database == MongoDatabase {
 extension Future where T: Model, T.Database == MongoDatabase {
 
     @discardableResult
-    public func mapIfDuplicatedKeyError(_ callback: @escaping (MongoConnection.Error) throws -> T) -> Future<T> {
+    public func catchIfDuplicatedKeyError(_ callback: @escaping (MongoConnection.Error) -> ()) -> Future<T> {
+        return self.catch { error in
+            guard
+                let mongoConnectionError = error as? MongoConnection.Error,
+                case .duplicatedKey = mongoConnectionError
+                else {
+                    return
+            }
+
+            return callback(mongoConnectionError)
+        }
+    }
+
+    @discardableResult
+    public func catchMapIfDuplicatedKeyError(_ callback: @escaping (MongoConnection.Error) throws -> T) -> Future<T> {
         return self.catchMap { error in
             guard
                 let mongoConnectionError = error as? MongoConnection.Error,
