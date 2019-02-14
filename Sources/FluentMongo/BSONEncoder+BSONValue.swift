@@ -12,8 +12,13 @@ import MongoSwift
 public extension BSONEncoder {
 
     public func encodeBSONValue<T: Encodable>(_ value: T) throws -> BSONValue {
+        // if it's already a `BSONValue`, just return it, unless if it is an
+        // array. technically `[Any]` is a `BSONValue`, but we can only use this
+        // short-circuiting if all the elements are actually BSONValues.
         switch value {
-        case let value as BSONValue:
+        case let value as BSONValue where !(value is [Any]):
+            return value
+        case let value as [BSONValue]:
             return value
         default:
             // We can only use BSONEncoder to encode top-level data
