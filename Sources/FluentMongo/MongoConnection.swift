@@ -129,6 +129,10 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
 
         return ["_id": ["$in": identifiers] as Document]
     }
+
+    deinit {
+        self.close()
+    }
 }
 
 // MARK: - Internal Indexing Helpers
