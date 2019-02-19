@@ -182,8 +182,13 @@ extension MongoConnection {
             self.logger?.record(query: "MongoConnection.prepareMigrationMetadata")
             let database = try self.client.db(config.database)
             let collection = MigrationLog<MongoDatabase>.entity
-            self.logger?.record(query: "Create collection: \(collection)")
-            _ = try database.createCollection(collection)
+            let collections = try database.listCollections(options: .init(filter: ["name": collection]))
+            if collections.contains(where: { $0["name"] as? String == collection }) {
+                self.logger?.record(query: "Collection \"\(collection)\" already exists. Skipping creation.")
+            } else {
+                self.logger?.record(query: "Create collection: \(collection)")
+                _ = try database.createCollection(collection)
+            }
 
             return self.worker.future()
         } catch {
