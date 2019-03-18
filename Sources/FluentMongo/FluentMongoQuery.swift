@@ -178,6 +178,18 @@ public struct FluentMongoQuery {
             pipeline.append(contentsOf: aggregates)
         }
 
+        // Remove joined collections from the output
+        if !self.joins.isEmpty {
+            var projection = Document()
+            for join in self.joins {
+                guard let field = join["$lookup", "as"] as? String else {
+                    continue
+                }
+                projection[field] = false
+            }
+            pipeline.append(["$project": projection])
+        }
+
         return pipeline
     }
 }
