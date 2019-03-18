@@ -57,3 +57,38 @@ public extension Document {
         }
     }
 }
+
+extension Document {
+
+    func byRemovingKeysPrefix(_ prefix: String) -> Document {
+
+        func removeKeysPrefix(_ document: Document) -> Document {
+
+            func ensureNoRootNameSpace(_ value: String) -> String {
+                let components = value.components(separatedBy: ".")
+                if components.first == prefix {
+                    return components.dropFirst().joined(separator: ".")
+                } else {
+                    return value
+                }
+            }
+
+            var mutableFilter = Document()
+
+            for item in document {
+                switch document[item.key] {
+                case .some(let value as Document):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = removeKeysPrefix(value)
+                case .some(let value):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = value
+                case .none:
+                    break
+                }
+            }
+
+            return mutableFilter
+        }
+
+        return removeKeysPrefix(self)
+    }
+}

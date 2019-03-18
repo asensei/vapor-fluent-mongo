@@ -36,7 +36,7 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
         for field in sort {
             document[field.key] = field.value
         }
-        query.sort = document
+        query.sort = document.byRemovingKeysPrefix(query.collection)
     }
 }
 
