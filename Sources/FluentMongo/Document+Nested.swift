@@ -79,10 +79,12 @@ extension Document {
                 switch document[item.key] {
                 case .some(let value as Document):
                     mutableFilter[ensureNoRootNameSpace(item.key)] = removeKeysPrefix(value)
+                case .some(let value as [Document]):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = value.map { removeKeysPrefix($0) }
                 case .some(let value):
                     mutableFilter[ensureNoRootNameSpace(item.key)] = value
                 case .none:
-                    break
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = nil
                 }
             }
 
