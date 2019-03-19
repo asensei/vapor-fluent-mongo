@@ -50,11 +50,14 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
     }
 
     public static func queryFilterApply(_ filter: QueryFilter, to query: inout Query) {
+
+        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.collection)
+
         switch query.filter {
         case .some(let document):
-            query.filter = [query.defaultFilterRelation.rawValue: [document, filter]]
+            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
         case .none:
-            query.filter = filter
+            query.filter = filterByRemovingRootNamespace
         }
     }
 }

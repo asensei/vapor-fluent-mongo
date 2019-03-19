@@ -34,7 +34,7 @@ extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQuer
         let lookup: Document = [
             "$lookup": [
                 "from": collection,
-                "localField": base.pathWithNamespace.joined(separator: "."),
+                "localField": base.path.joined(separator: "."),
                 "foreignField": joined.path.joined(separator: "."),
                 "as": collection
             ] as Document
