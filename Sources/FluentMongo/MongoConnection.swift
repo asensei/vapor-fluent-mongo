@@ -66,7 +66,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
                     self.logger?.record(query: String(describing: result))
                 }
             case .find:
-                let cursor = try collection.aggregate(query.aggregationPipeline())
+                let cursor = try collection.aggregate(query.aggregationPipeline(), options: query.aggregateOptions)
                 var count = 0
                 try cursor.forEach {
                     count += 1
