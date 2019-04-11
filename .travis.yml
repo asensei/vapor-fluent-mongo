@@ -11,8 +11,8 @@ before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       SWIFT_VERSION=$(<.swift-version);
       docker pull swift:${SWIFT_VERSION};
-      docker pull mongo:4.0.5;
-      docker run -d -p 27017:27017 mongo:4.0.5;
+      docker pull mongo:4.0.8;
+      docker run -d -p 27017:27017 mongo:4.0.8;
     elif [ $TRAVIS_OS_NAME == "osx" ]; then
       rvm use 2.5.1 --install --binary --fuzzy;
       ruby --version;
@@ -40,7 +40,7 @@ script:
     else
       args="apt-get update
         && apt-get -y install cmake
-        && git clone -b r1.13 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
+        && git clone -b r1.14 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
         && pushd /tmp/libmongoc
         && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
         && make -j8 install

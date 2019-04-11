@@ -30,6 +30,8 @@ public struct FluentMongoQuery {
     public var limit: Int64?
     public var sort: FluentMongoQuerySort?
 
+    public var aggregateOptions: AggregateOptions?
+
     public init(
         collection: String,
         action: FluentMongoQueryAction = .find,
@@ -43,7 +45,8 @@ public struct FluentMongoQuery {
         partialCustomData: FluentMongoQueryData? = nil,
         skip: Int64? = nil,
         limit: Int64? = nil,
-        sort: FluentMongoQuerySort? = nil
+        sort: FluentMongoQuerySort? = nil,
+        aggregateOptions: AggregateOptions? = nil
         ) {
         self.collection = collection
         self.action = action
@@ -58,6 +61,7 @@ public struct FluentMongoQuery {
         self.skip = skip
         self.limit = limit
         self.sort = sort
+        self.aggregateOptions = aggregateOptions
     }
 
     func projection() -> Document? {
