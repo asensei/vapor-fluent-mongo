@@ -9,7 +9,7 @@
 import Foundation
 import Async
 
-public extension MongoConnection {
+extension MongoConnection {
 
     public static func connect(config: MongoDatabaseConfig, on worker: Worker) -> Future<MongoConnection> {
         do {

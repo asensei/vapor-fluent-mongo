@@ -53,7 +53,7 @@ class FluentMongoProviderTests: XCTestCase {
                 database: "vapor_database"
             )
 
-            try MongoClient(connectionString: config.connectionURL.absoluteString).db(config.database).drop()
+            try MongoClient(config.connectionURL.absoluteString).db(config.database).drop()
             self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
         } catch {
@@ -158,7 +158,12 @@ class FluentMongoProviderTests: XCTestCase {
             let r0 = try User.query(on: conn).filter(\.nicknames, .equal, ["a"]).all().wait()
             XCTAssertEqual(r0.count, 0)
 
-            let r1 = try User.query(on: conn).filter(\.nicknames, .equal, ["a", "b", "c"]).all().wait()
+            let r1 = try User.query(on: conn).group(.and) { group in
+                group.filter(\.nicknames, .inSubset, ["a"])
+                group.filter(\.nicknames, .inSubset, ["b"])
+                group.filter(\.nicknames, .inSubset, ["c"])
+            }.all().wait()
+
             XCTAssertEqual(r1.count, 1)
             XCTAssertEqual(r1.first?.name, "User1")
 

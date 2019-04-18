@@ -9,7 +9,7 @@
 import Foundation
 import MongoSwift
 
-public extension BSONEncoder {
+extension BSONEncoder {
 
     public func encodeBSONValue<T: Encodable>(_ value: T) throws -> BSONValue {
         // if it's already a `BSONValue`, just return it, unless if it is an

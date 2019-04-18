@@ -9,7 +9,7 @@
 import Foundation
 import Fluent
 
-public extension QueryBuilder where Database == MongoDatabase, Result: Model {
+extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
     /// Adds elements to an array only if they do not already exist in the set.
     public func update<C>(_ field: KeyPath<Result, C>, addToSet values: C) -> Self where C: Collection & Encodable, C.Element: Encodable {

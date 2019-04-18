@@ -4,13 +4,13 @@ os:
 language: generic
 sudo: required
 dist: trusty
-osx_image: xcode10.1
+osx_image: xcode10.2
 services: docker
 
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       SWIFT_VERSION=$(<.swift-version);
-      docker pull swift:${SWIFT_VERSION};
+      docker pull swift:${SWIFT_VERSION}-xenial;
       docker pull mongo:4.0.8;
       docker run -d -p 27017:27017 mongo:4.0.8;
     elif [ $TRAVIS_OS_NAME == "osx" ]; then
@@ -48,7 +48,7 @@ script:
         && swift build
         && swift build -c release
         && swift test";
-      docker run --rm --net=host -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION} bash -c "${args}";
+      docker run --rm --net=host -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION}-xenial bash -c "${args}";
     fi
 
 notifications:

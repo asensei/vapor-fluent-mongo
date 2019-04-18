@@ -10,7 +10,7 @@ import Foundation
 import Fluent
 
 // Duplicates https://github.com/vapor/fluent/pull/601
-public extension QueryBuilder {
+extension QueryBuilder {
     // MARK: Key
 
     /// Applies a key to this query specifying a field to fetch from the database.

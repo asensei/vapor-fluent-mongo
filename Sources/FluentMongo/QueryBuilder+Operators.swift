@@ -9,7 +9,7 @@
 import Foundation
 import Fluent
 
-public extension QueryBuilder where Database == MongoDatabase {
+extension QueryBuilder where Database == MongoDatabase {
 
     @discardableResult
     public func filter(_ value: FluentMongoFilterOperator<Database, Result>) -> Self {

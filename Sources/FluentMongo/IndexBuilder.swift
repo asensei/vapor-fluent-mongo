@@ -22,7 +22,7 @@ public final class IndexBuilder<T: Model> {
     }
 }
 
-public extension IndexBuilder {
+extension IndexBuilder {
 
     public func create() -> Future<Void> {
         return self.connection.flatMap { conn in
@@ -37,7 +37,7 @@ public extension IndexBuilder {
     }
 }
 
-public extension IndexBuilder {
+extension IndexBuilder {
 
     public func key<V>(_ key: KeyPath<T, V>, _ direction: FluentMongoQuerySortDirection = .ascending) -> IndexBuilder<T> {
         let property: FluentProperty = .keyPath(key)
