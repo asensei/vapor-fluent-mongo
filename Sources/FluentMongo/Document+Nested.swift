@@ -10,7 +10,7 @@ import Foundation
 import MongoSwift
 
 // Review when https://jira.mongodb.org/browse/SWIFT-273 will be fixed.
-public extension Document {
+extension Document {
     public subscript(keys: [String]) -> BSONValue? {
         get {
             guard !keys.isEmpty else {

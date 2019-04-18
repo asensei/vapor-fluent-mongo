@@ -78,7 +78,7 @@ public struct MongoDatabaseConfig {
     }
 }
 
-public extension MongoDatabaseConfig {
+extension MongoDatabaseConfig {
 
     public enum EnvironmentKey: String {
         case connectionURL = "FLUENT_MONGO_CONNECTION_URL"

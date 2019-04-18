@@ -10,7 +10,7 @@ import Foundation
 import Fluent
 import MongoSwift
 
-public extension QueryBuilder where Database.Query == FluentMongoQuery {
+extension QueryBuilder where Database.Query == FluentMongoQuery {
 
     /// Enables writing to temporary files. When set to true, aggregation stages can write data to the _tmp subdirectory in the dbPath directory.
     @discardableResult

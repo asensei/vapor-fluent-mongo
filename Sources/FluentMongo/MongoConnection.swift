@@ -16,7 +16,7 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
     public required init(config: MongoDatabaseConfig, on worker: Worker) throws {
         self.config = config
         self.worker = worker
-        self.client = try MongoClient(connectionString: config.connectionURL.absoluteString, options: config.options)
+        self.client = try MongoClient(config.connectionURL.absoluteString, options: config.options)
         self.isClosed = false
         self.logger = nil
     }
@@ -54,8 +54,8 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
     public func query(_ query: Database.Query, _ handler: @escaping (Database.Output) throws -> Void) -> Future<Void> {
         do {
             self.logger?.record(query: String(describing: query))
-            let database = try self.client.db(config.database)
-            let collection = try database.collection(query.collection)
+            let database = self.client.db(config.database)
+            let collection = database.collection(query.collection)
 
             switch query.action {
             case .insert:
@@ -103,11 +103,10 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
             }
 
             return self.worker.future()
-        } catch let error as MongoError {
+        } catch let error as ServerError {
             switch error {
-            // TODO: update this as soon as https://github.com/mongodb/mongo-swift-driver/issues/200 is fixed.
-            case .commandError(let message) where message.hasPrefix("E11000"):
-                return self.worker.future(error: Error.duplicatedKey(message))
+            case .writeError(let writeError, let writeConcernError, _) where writeError?.code == 11000 || writeConcernError?.code == 11000:
+                return self.worker.future(error: Error.duplicatedKey(error.errorDescription ?? "No error description available."))
             default:
                 return self.worker.future(error: Error.underlyingDriverError(error))
             }
@@ -145,7 +144,7 @@ extension MongoConnection {
                 throw IndexBuilderError.invalidKeys
             }
             self.logger?.record(query: "MongoConnection.createIndex")
-            let database = try self.client.db(config.database)
+            let database = self.client.db(config.database)
             self.logger?.record(query: "Create index on \(collection)")
             _ = try database.collection(collection).createIndex(index)
 
@@ -162,7 +161,7 @@ extension MongoConnection {
             }
 
             self.logger?.record(query: "MongoConnection.dropIndex")
-            let database = try self.client.db(config.database)
+            let database = self.client.db(config.database)
             self.logger?.record(query: "Drop index on \(collection)")
             _ = try database.collection(collection).dropIndex(index)
 
@@ -180,7 +179,7 @@ extension MongoConnection {
     func prepareMigrationMetadata() -> Future<Void> {
         do {
             self.logger?.record(query: "MongoConnection.prepareMigrationMetadata")
-            let database = try self.client.db(config.database)
+            let database = self.client.db(config.database)
             let collection = MigrationLog<MongoDatabase>.entity
             let collections = try database.listCollections(options: .init(filter: ["name": collection]))
             if collections.contains(where: { $0["name"] as? String == collection }) {
@@ -199,7 +198,7 @@ extension MongoConnection {
     func revertMigrationMetadata() -> Future<Void> {
         do {
             self.logger?.record(query: "MongoConnection.revertMigrationMetadata")
-            let database = try self.client.db(config.database)
+            let database = self.client.db(config.database)
             let collection = MigrationLog<MongoDatabase>.entity
             self.logger?.record(query: "Drop collection: \(collection)")
             _ = try database.collection(collection).drop()
@@ -211,7 +210,7 @@ extension MongoConnection {
     }
 }
 
-public extension MongoConnection {
+extension MongoConnection {
     public enum Error: Swift.Error {
         case invalidQuery(Database.Query)
         case duplicatedKey(String)

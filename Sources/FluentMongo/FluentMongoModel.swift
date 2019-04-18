@@ -16,7 +16,7 @@ public protocol FluentMongoModel {
     var _id: ID? { get set }
 }
 
-public extension FluentMongoModel where Self: Model {
+extension FluentMongoModel where Self: Model {
     public static var idKey: WritableKeyPath<Self, ID?> {
         return \._id
     }
