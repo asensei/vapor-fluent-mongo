@@ -49,108 +49,32 @@ extension IndexBuilder {
     }
 
     public func background(_ value: Bool) -> IndexBuilder<T> {
-        let previous = self.index.options
-        let options = IndexOptions(
-            background: value,
-            expireAfter: previous?.expireAfter,
-            name: previous?.name,
-            sparse: previous?.sparse,
-            storageEngine: previous?.storageEngine,
-            unique: previous?.unique,
-            version: previous?.version,
-            defaultLanguage: previous?.defaultLanguage,
-            languageOverride: previous?.defaultLanguage,
-            textVersion: previous?.textVersion,
-            weights: previous?.weights,
-            sphereVersion: previous?.sphereVersion,
-            bits: previous?.bits,
-            max: previous?.max,
-            min: previous?.min,
-            bucketSize: previous?.bucketSize,
-            partialFilterExpression: previous?.partialFilterExpression,
-            collation: previous?.collation
-        )
+        var options = self.index.options ?? IndexOptions()
+        options.background = value
         self.index = IndexModel(keys: self.index.keys, options: options)
 
         return self
     }
 
     public func expireAfter(_ value: Int32) -> IndexBuilder<T> {
-        let previous = self.index.options
-        let options = IndexOptions(
-            background: previous?.background,
-            expireAfter: value,
-            name: previous?.name,
-            sparse: previous?.sparse,
-            storageEngine: previous?.storageEngine,
-            unique: previous?.unique,
-            version: previous?.version,
-            defaultLanguage: previous?.defaultLanguage,
-            languageOverride: previous?.defaultLanguage,
-            textVersion: previous?.textVersion,
-            weights: previous?.weights,
-            sphereVersion: previous?.sphereVersion,
-            bits: previous?.bits,
-            max: previous?.max,
-            min: previous?.min,
-            bucketSize: previous?.bucketSize,
-            partialFilterExpression: previous?.partialFilterExpression,
-            collation: previous?.collation
-        )
+        var options = self.index.options ?? IndexOptions()
+        options.expireAfterSeconds = value
         self.index = IndexModel(keys: self.index.keys, options: options)
 
         return self
     }
 
     public func name(_ value: String) -> IndexBuilder<T> {
-        let previous = self.index.options
-        let options = IndexOptions(
-            background: previous?.background,
-            expireAfter: previous?.expireAfter,
-            name: value,
-            sparse: previous?.sparse,
-            storageEngine: previous?.storageEngine,
-            unique: previous?.unique,
-            version: previous?.version,
-            defaultLanguage: previous?.defaultLanguage,
-            languageOverride: previous?.defaultLanguage,
-            textVersion: previous?.textVersion,
-            weights: previous?.weights,
-            sphereVersion: previous?.sphereVersion,
-            bits: previous?.bits,
-            max: previous?.max,
-            min: previous?.min,
-            bucketSize: previous?.bucketSize,
-            partialFilterExpression: previous?.partialFilterExpression,
-            collation: previous?.collation
-        )
+        var options = self.index.options ?? IndexOptions()
+        options.name = value
         self.index = IndexModel(keys: self.index.keys, options: options)
 
         return self
     }
 
     public func unique(_ value: Bool) -> IndexBuilder<T> {
-        let previous = self.index.options
-        let options = IndexOptions(
-            background: previous?.background,
-            expireAfter: previous?.expireAfter,
-            name: previous?.name,
-            sparse: previous?.sparse,
-            storageEngine: previous?.storageEngine,
-            unique: value,
-            version: previous?.version,
-            defaultLanguage: previous?.defaultLanguage,
-            languageOverride: previous?.defaultLanguage,
-            textVersion: previous?.textVersion,
-            weights: previous?.weights,
-            sphereVersion: previous?.sphereVersion,
-            bits: previous?.bits,
-            max: previous?.max,
-            min: previous?.min,
-            bucketSize: previous?.bucketSize,
-            partialFilterExpression: previous?.partialFilterExpression,
-            collation: previous?.collation
-        )
+        var options = self.index.options ?? IndexOptions()
+        options.unique = value
         self.index = IndexModel(keys: self.index.keys, options: options)
 
         return self
