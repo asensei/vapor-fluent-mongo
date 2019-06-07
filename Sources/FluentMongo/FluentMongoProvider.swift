@@ -15,7 +15,6 @@ public final class FluentMongoProvider: Provider {
     public init() {}
 
     public func register(_ services: inout Services) throws {
-        MongoSwift.initialize()
         try services.register(FluentProvider())
         try services.register(DatabaseKitProvider())
         services.register(MongoDatabaseConfig.self)
