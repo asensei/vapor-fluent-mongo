@@ -48,7 +48,7 @@ extension QueryBuilder {
     ///              If `0`, the top-most properties will be added as keys.
     ///              If `1`, the first layer of nested properties, and so-on.
     /// - returns: `QueryBuilder` decoding type `T`.
-    public func keys<T>(for type: T.Type, depth: Int = 0) throws -> QueryBuilder<Database, T> where T: Decodable {
+    public func keys<T>(for type: T.Type, depth: Int = 0) throws -> QueryBuilder<Database, T> where T: Decodable & Reflectable {
         let properties = try type.decodeProperties(depth: depth)
 
         for property in properties {
