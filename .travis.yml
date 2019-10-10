@@ -24,7 +24,7 @@ jobs:
         - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
             && apt-get -y install cmake
-            && git clone -b r1.14 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
+            && git clone -b r1.15 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
             && pushd /tmp/libmongoc
             && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
             && make -j8 install
