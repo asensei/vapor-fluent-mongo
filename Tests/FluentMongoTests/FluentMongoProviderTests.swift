@@ -14,32 +14,6 @@ import MongoSwift
 
 class FluentMongoProviderTests: XCTestCase {
 
-    static let allTests = [
-        ("testIndex", testIndex),
-        ("testNestedIndex", testNestedIndex),
-        ("testModels", testModels),
-        ("testError", testError),
-        ("testFilterCollectionInSubset", testFilterCollectionInSubset),
-        ("testAddToSet", testAddToSet),
-        ("testPush", testPush),
-        ("testPullAll", testPullAll),
-        ("testJoin", testJoin),
-        ("testDistinct", testDistinct),
-        ("testMigration", testMigration),
-        //("testBenchmarkModels", testBenchmarkModels),
-        ("testBenchmarkUpdate", testBenchmarkUpdate),
-        ("testBenchmarkBugs", testBenchmarkBugs),
-        ("testBenchmarkSort", testBenchmarkSort),
-        ("testBenchmarkRange", testBenchmarkRange),
-        ("testBenchmarkSubset", testBenchmarkSubset),
-        ("testBenchmarkChunking", testBenchmarkChunking),
-        ("testBenchmarkAggregate", testBenchmarkAggregate),
-        ("testBenchmarkLifecycle", testBenchmarkLifecycle),
-        ("testBenchmarkAutoincrement", testBenchmarkAutoincrement),
-        ("testBenchmarkTimestampable", testBenchmarkTimestampable),
-        ("testBenchmarkJoins", testBenchmarkJoins)
-    ]
-
     var benchmarker: Benchmarker<FluentMongo.MongoDatabase>!
 
     var database: FluentMongo.MongoDatabase!
