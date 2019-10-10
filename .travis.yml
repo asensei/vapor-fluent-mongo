@@ -1,55 +1,56 @@
-os:
-  - linux
-  - osx
 language: generic
-sudo: required
-dist: trusty
-osx_image: xcode10.2
-services: docker
 
 before_install:
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then
-      SWIFT_VERSION=$(<.swift-version);
-      docker pull swift:${SWIFT_VERSION}-xenial;
-      docker pull mongo:4.0.8;
-      docker run -d -p 27017:27017 mongo:4.0.8;
-    elif [ $TRAVIS_OS_NAME == "osx" ]; then
-      rvm use 2.5.1 --install --binary --fuzzy;
-      ruby --version;
-      gem install bundler;
-      bundle --version;
-      brew update;
-      brew install mongo-c-driver;
-      brew install mongodb;
-      brew services start mongodb;
-      brew outdated swiftlint || brew upgrade swiftlint;
-    fi
+  - export SWIFT_VERSION=$(<.swift-version)
+  - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
+  - export MONGO_DOCKER_IMAGE=mongo:4.0.12
 
-install:
-  - if [ $TRAVIS_OS_NAME == "osx" ]; then
-      bundle install --jobs=3 --retry=3 --deployment;
-    fi
+stages:
+- name: test
+  if: tag IS NOT present
 
-script:
-  - if [ $TRAVIS_OS_NAME == "osx" ]; then
-      swift --version;
-      swift build;
-      swift build -c release;
-      swift test;
-      swiftlint;
-    else
-      args="apt-get update
-        && apt-get -y install cmake
-        && git clone -b r1.14 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
-        && pushd /tmp/libmongoc
-        && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
-        && make -j8 install
-        && popd
-        && swift build
-        && swift build -c release
-        && swift test";
-      docker run --rm --net=host -v $(pwd):/app --workdir /app swift:${SWIFT_VERSION}-xenial bash -c "${args}";
-    fi
+jobs:
+  include:
+
+    - stage: test
+      name: Unit Tests
+      os: linux
+      dist: bionic
+      services: docker
+      script:
+        - docker pull ${SWIFT_DOCKER_IMAGE}
+        - docker pull ${MONGO_DOCKER_IMAGE}
+        - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
+        - args="apt-get update
+            && apt-get -y install cmake
+            && git clone -b r1.14 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
+            && pushd /tmp/libmongoc
+            && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
+            && make -j8 install
+            && popd
+            && swift build -c debug
+            && swift build -c release
+            && swift test -c debug --sanitize=thread --enable-test-discovery";        
+        - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
+
+    - stage: test
+      name: Unit Tests
+      os: osx
+      osx_image: xcode11
+      before_script:
+        - gem install bundler
+        - bundle install
+        - brew update
+        - brew install mongo-c-driver
+        - brew install mongodb
+        - brew outdated swiftlint || brew upgrade swiftlint
+        - brew services start mongodb
+      script:
+        - swift --version
+        - swift build
+        - swift build -c release
+        - swift test
+        - swiftlint
 
 notifications:
   email:
