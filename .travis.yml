@@ -4,6 +4,7 @@ before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
   - export MONGO_DOCKER_IMAGE=mongo:4.0.12
+  - export MONGO_BREW_VERSION=mongodb-community@4.0.12
 
 stages:
 - name: test
@@ -41,10 +42,11 @@ jobs:
         - gem install bundler
         - bundle install
         - brew update
+        - brew tap mongodb/brew
+        - brew install ${MONGO_BREW_VERSION}
+        - brew services start ${MONGO_BREW_VERSION}
         - brew install mongo-c-driver
-        - brew install mongodb
         - brew outdated swiftlint || brew upgrade swiftlint
-        - brew services start mongodb
       script:
         - swift --version
         - swift build
