@@ -5,6 +5,7 @@ before_install:
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
   - export MONGO_DOCKER_IMAGE=mongo:4.0.12
   - export MONGO_BREW_VERSION=mongodb-community@4.0
+  - export MONGO_C_DRIVER=1.15.1
 
 stages:
 - name: test
@@ -23,11 +24,12 @@ jobs:
         - docker pull ${MONGO_DOCKER_IMAGE}
         - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
-            && apt-get -y install cmake
-            && git clone -b r1.15 https://github.com/mongodb/mongo-c-driver /tmp/libmongoc
-            && pushd /tmp/libmongoc
-            && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
-            && make -j8 install
+            && apt-get -y install wget cmake libssl-dev libsasl2-dev
+            && wget https://github.com/mongodb/mongo-c-driver/releases/download/${MONGO_C_DRIVER}/mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
+            && tar xzf mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
+            && pushd mongo-c-driver-${MONGO_C_DRIVER}
+            && cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr
+            && make install
             && popd
             && swift build -c debug
             && swift build -c release
