@@ -17,7 +17,7 @@ public typealias FluentMongoQueryData = Document
 extension Database where Self: BSONCoder, Self: QuerySupporting, Self.Query == FluentMongoQuery, Self.QueryData == FluentMongoQueryData, Self.QueryField == FluentMongoQueryField {
 
     public static func queryDataSet<E: Encodable>(_ field: QueryField, to data: E, on query: inout Query) {
-        guard let value: BSONValue = try? Self.encoder.encodeBSONValue(data) else {
+        guard let value: BSON = try? Self.encoder.encodeBSONValue(data) else {
             return
         }
 

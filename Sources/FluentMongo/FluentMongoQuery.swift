@@ -93,18 +93,18 @@ public struct FluentMongoQuery {
             }
             // It is not possible to use dots when specifying an id field for $group
             let path = (field.entity == self.collection ? field.path : field.pathWithNamespace)
-            id[field.pathWithNamespace.joined(separator: ":")] = "$" + path.joined(separator: ".")
+            id[field.pathWithNamespace.joined(separator: ":")] = .string("$" + path.joined(separator: "."))
         }
 
         if id.isEmpty {
             id[self.collection + ":_id"] = "$_id"
         }
 
-        group["_id"] = id
-        group["doc"] = ["$first": "$$ROOT"] as Document
+        group["_id"] = .document(id)
+        group["doc"] = ["$first": "$$ROOT"]
 
-        stages.append(["$group": group])
-        stages.append(["$replaceRoot": ["newRoot": "$doc"] as Document])
+        stages.append(["$group": .document(group)])
+        stages.append(["$replaceRoot": ["newRoot": "$doc"]])
 
         return stages
     }
@@ -119,20 +119,20 @@ public struct FluentMongoQuery {
 
             switch aggregate {
             case .count:
-                aggregates.append([aggregate.value: FluentMongoQuery.defaultAggregateField])
+                aggregates.append([aggregate.value: .string(FluentMongoQuery.defaultAggregateField)])
             case .group(let accumulator):
-                var group: Document = ["_id": BSONNull()]
+                var group: Document = ["_id": .null]
                 for key in keys {
                     guard case .raw(let field) = key else {
                         continue
                     }
                     // It seems that fluent only support one aggregated field
                     let path = (field.entity == self.collection ? field.path : field.pathWithNamespace).joined(separator: ".")
-                    group[FluentMongoQuery.defaultAggregateField] = [accumulator.value: "$" + path] as Document
+                    group[FluentMongoQuery.defaultAggregateField] = [accumulator.value: .string("$" + path)]
                     break
                 }
 
-                aggregates.append([aggregate.value: group])
+                aggregates.append([aggregate.value: .document(group)])
             }
         }
 
@@ -149,12 +149,12 @@ public struct FluentMongoQuery {
 
         // Filters
         if let filter = self.filter {
-            pipeline.append(["$match": filter])
+            pipeline.append(["$match": .document(filter)])
         }
 
         // Projection
         if let projection = self.projection() {
-            pipeline.append(["$project": projection])
+            pipeline.append(["$project": .document(projection)])
         }
 
         // Distinct
@@ -164,17 +164,17 @@ public struct FluentMongoQuery {
 
         // Sort
         if let sort = self.sort {
-            pipeline.append(["$sort": sort])
+            pipeline.append(["$sort": .document(sort)])
         }
 
         // Skip
         if let skip = self.skip {
-            pipeline.append(["$skip": skip])
+            pipeline.append(["$skip": .int64(skip)])
         }
 
         // Limit
         if let limit = self.limit {
-            pipeline.append(["$limit": limit])
+            pipeline.append(["$limit": .int64(limit)])
         }
 
         // Aggregates
@@ -186,12 +186,14 @@ public struct FluentMongoQuery {
         if !self.joins.isEmpty {
             var projection = Document()
             for join in self.joins {
-                guard let field = join["$lookup", "as"] as? String else {
+                switch join["$lookup", "as"] {
+                case .string(let field):
+                    projection[field] = false
+                default:
                     continue
                 }
-                projection[field] = false
             }
-            pipeline.append(["$project": projection])
+            pipeline.append(["$project": .document(projection)])
         }
 
         return pipeline

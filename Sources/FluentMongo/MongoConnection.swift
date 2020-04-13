@@ -45,7 +45,6 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
 
     /// Closes the `DatabaseConnection`.
     public func close() {
-        self.client.close()
         self.isClosed = true
     }
 
@@ -78,14 +77,14 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
                     case .count:
                         try handler([FluentMongoQuery.defaultAggregateField: 0])
                     case .group:
-                        try handler([FluentMongoQuery.defaultAggregateField: BSONNull()])
+                        try handler([FluentMongoQuery.defaultAggregateField: .null])
                     }
                 }
             case .update:
                 switch (query.data, query.partialData != nil || query.partialCustomData != nil) {
                 case (.none, true):
                     var document = query.partialCustomData ?? Document()
-                    document["$set"] = query.partialData
+                    document["$set"] = query.partialData.map { .document($0) }
                     if let result = try collection.updateMany(filter: self.filter(query, collection), update: document) {
                         self.logger?.record(query: String(describing: result))
                     }
@@ -122,11 +121,11 @@ public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQue
         }
 
         var pipeline = query.aggregationPipeline()
-        pipeline.append(["$project": ["_id": true] as Document])
+        pipeline.append(["$project": ["_id": true]])
         let cursor = try collection.aggregate(pipeline)
         let identifiers = cursor.compactMap { $0["_id"] }
 
-        return ["_id": ["$in": identifiers] as Document]
+        return ["_id": ["$in": .array(identifiers)]]
     }
 
     deinit {
@@ -181,8 +180,8 @@ extension MongoConnection {
             self.logger?.record(query: "MongoConnection.prepareMigrationMetadata")
             let database = self.client.db(config.database)
             let collection = MigrationLog<MongoDatabase>.entity
-            let collections = try database.listCollections(options: .init(filter: ["name": collection]))
-            if collections.contains(where: { $0["name"] as? String == collection }) {
+            let collections = try database.listCollections(["name": .string(collection)])
+            if collections.contains(where: { $0.name == collection }) {
                 self.logger?.record(query: "Collection \"\(collection)\" already exists. Skipping creation.")
             } else {
                 self.logger?.record(query: "Create collection: \(collection)")
