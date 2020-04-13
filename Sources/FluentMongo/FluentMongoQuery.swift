@@ -186,12 +186,11 @@ public struct FluentMongoQuery {
         if !self.joins.isEmpty {
             var projection = Document()
             for join in self.joins {
-                switch join["$lookup", "as"] {
-                case .string(let field):
-                    projection[field] = false
-                default:
+                guard let field = join["$lookup", "as"]?.stringValue else {
                     continue
                 }
+
+                projection[field] = false
             }
             pipeline.append(["$project": .document(projection)])
         }

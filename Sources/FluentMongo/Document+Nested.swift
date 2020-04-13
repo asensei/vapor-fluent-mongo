@@ -20,7 +20,7 @@ extension Document {
             var value: BSON? = .document(self)
 
             for key in keys {
-                value = (value as? Document)?[key]
+                value = (value?.documentValue)?[key]
             }
 
             return value
@@ -39,7 +39,7 @@ extension Document {
 
                 var path = keys
                 let component = path.removeFirst()
-                var next = document[component] as? Document ?? Document()
+                var next = document[component]?.documentValue ?? Document()
                 setNewValue(for: path, in: &next)
                 document[component] = .document(next)
             }
@@ -79,9 +79,8 @@ extension Document {
                 switch document[item.key] {
                 case .document(let value):
                     mutableFilter[ensureNoRootNameSpace(item.key)] = .document(removeKeysPrefix(value))
-                //case .array(let value) where value is [Document]: // TODO FIX THIS
-                //case .some(let value as [Document]):
-                //    mutableFilter[ensureNoRootNameSpace(item.key)] = value.map { removeKeysPrefix($0) }
+                case .some(let value as [Document]):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = value.map { removeKeysPrefix($0) }
                 case .some(let value):
                     mutableFilter[ensureNoRootNameSpace(item.key)] = value
                 case .none:
