@@ -28,7 +28,7 @@ class FluentMongoProviderTests: XCTestCase {
             )
 
             try MongoClient(config.connectionURL.absoluteString).db(config.database).drop()
-            self.database = MongoDatabase(config: config)
+            self.database = MongoDatabase(config: config, threadPool: BlockingIOThreadPool(numberOfThreads: 2))
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
         } catch {
             XCTFail(error.localizedDescription)
