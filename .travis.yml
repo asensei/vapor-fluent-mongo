@@ -3,9 +3,9 @@ language: generic
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:4.0.12
+  - export MONGO_DOCKER_IMAGE=mongo:4.0.16
   - export MONGO_BREW_VERSION=mongodb-community@4.0
-  - export MONGO_C_DRIVER=1.15.1
+  - export MONGO_C_DRIVER=1.16.2
 
 stages:
 - name: test
