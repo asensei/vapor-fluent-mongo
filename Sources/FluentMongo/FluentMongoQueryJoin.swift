@@ -33,18 +33,18 @@ extension Database where Self: JoinSupporting, Self.QueryJoin == FluentMongoQuer
 
         let lookup: Document = [
             "$lookup": [
-                "from": collection,
-                "localField": base.path.joined(separator: "."),
-                "foreignField": joined.path.joined(separator: "."),
-                "as": collection
-            ] as Document
+                "from": .string(collection),
+                "localField": .string(base.path.joined(separator: ".")),
+                "foreignField": .string(joined.path.joined(separator: ".")),
+                "as": .string(collection)
+            ]
         ]
 
         let unwind: Document = [
             "$unwind": [
-                "path": "$" + collection,
-                "preserveNullAndEmptyArrays": method == .outer
-            ] as Document
+                "path": .string("$" + collection),
+                "preserveNullAndEmptyArrays": .bool(method == .outer)
+            ]
         ]
 
         return [lookup, unwind]

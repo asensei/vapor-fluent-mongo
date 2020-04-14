@@ -23,7 +23,7 @@ extension Database where Self: QuerySupporting, Self.QuerySort == FluentMongoQue
 
     public static func querySort(_ field: QueryField, _ direction: QuerySortDirection) -> QuerySort {
         var document = Document()
-        document[field.pathWithNamespace.joined(separator: ".")] = direction.rawValue
+        document[field.pathWithNamespace.joined(separator: ".")] = .init(direction.rawValue)
 
         return document
     }

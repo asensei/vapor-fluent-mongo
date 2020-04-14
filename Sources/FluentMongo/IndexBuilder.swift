@@ -42,7 +42,7 @@ extension IndexBuilder {
     public func key<V>(_ key: KeyPath<T, V>, _ direction: FluentMongoQuerySortDirection = .ascending) -> IndexBuilder<T> {
         let property: FluentProperty = .keyPath(key)
         var keys = self.index.keys
-        keys[property.path.joined(separator: ".")] = direction.rawValue
+        keys[property.path.joined(separator: ".")] = .init(direction.rawValue)
         self.index = IndexModel(keys: keys, options: self.index.options)
 
         return self

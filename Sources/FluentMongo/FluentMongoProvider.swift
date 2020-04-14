@@ -27,12 +27,6 @@ public final class FluentMongoProvider: Provider {
     public func didBoot(_ worker: Container) throws -> EventLoopFuture<Void> {
         return .done(on: worker)
     }
-
-    /*
-    deinit {
-        MongoSwift.cleanup()
-    }
-    */
 }
 
 /// MARK: Services
@@ -47,6 +41,6 @@ extension MongoDatabaseConfig: ServiceType {
 extension MongoDatabase: ServiceType {
     /// See `ServiceType.makeService(for:)`
     public static func makeService(for worker: Container) throws -> MongoDatabase {
-        return try .init(config: worker.make())
+        return try .init(config: worker.make(), threadPool: worker.make())
     }
 }

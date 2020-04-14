@@ -7,15 +7,29 @@
 //
 
 import Foundation
-import Async
+import NIO
+import MongoSwift
 
 extension MongoConnection {
 
-    public static func connect(config: MongoDatabaseConfig, on worker: Worker) -> Future<MongoConnection> {
-        do {
-            return try worker.future(MongoConnection(config: config, on: worker))
-        } catch {
-            return worker.future(error: error)
+    public static func connect(config: MongoDatabaseConfig, threadPool: BlockingIOThreadPool, on eventLoop: EventLoop) -> EventLoopFuture<MongoConnection> {
+
+        let promise = eventLoop.newPromise(of: MongoConnection.self)
+
+        threadPool.submit { _ in
+            do {
+                let connection = try MongoConnection(
+                    client: MongoClient(config.connectionURL.absoluteString, options: config.options),
+                    database: config.database,
+                    threadPool: threadPool,
+                    on: eventLoop
+                )
+                promise.succeed(result: connection)
+            } catch {
+                promise.fail(error: error)
+            }
         }
+
+        return promise.futureResult
     }
 }

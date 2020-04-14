@@ -19,7 +19,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
     public static func queryFilter(_ field: QueryField, _ method: QueryFilterMethod, _ value: QueryFilterValue) -> QueryFilter {
         var document = Document()
 
-        let unwrappedValue: BSONValue
+        let unwrappedValue: BSON
 
         switch method {
         case .equal,
@@ -28,12 +28,12 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
              .lessThan,
              .lessThanOrEqual,
              .notEqual:
-            unwrappedValue = value?.first ?? BSONNull()
+            unwrappedValue = value?.first ?? .null
         case .inSubset, .notInSubset:
-            unwrappedValue = value ?? []
+            unwrappedValue = value.map { .array($0) } ?? .array([])
         }
 
-        document[field.pathWithNamespace.joined(separator: ".")] = [method.rawValue: unwrappedValue] as Document
+        document[field.pathWithNamespace.joined(separator: ".")] = [method.rawValue: unwrappedValue]
 
         return document
     }
@@ -55,7 +55,7 @@ extension Database where Self: QuerySupporting, Self.Query == FluentMongoQuery, 
 
         switch query.filter {
         case .some(let document):
-            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
+            query.filter = [query.defaultFilterRelation.rawValue: [.document(document), .document(filterByRemovingRootNamespace)]]
         case .none:
             query.filter = filterByRemovingRootNamespace
         }
@@ -112,13 +112,13 @@ extension Database where Self: QuerySupporting, Self.QueryFilterMethod == Fluent
 
 // MARK: - QueryFilterValue
 
-public typealias FluentMongoQueryFilterValue = [BSONValue]
+public typealias FluentMongoQueryFilterValue = [BSON]
 
 extension Database where Self: BSONCoder, Self: QuerySupporting, Self.QueryFilterValue == FluentMongoQueryFilterValue? {
 
     public static func queryFilterValue<E: Encodable>(_ encodables: [E]) -> QueryFilterValue {
         let encoder = Self.encoder
-        let value: [BSONValue] = encodables.compactMap { try? encoder.encodeBSONValue($0) }
+        let value: [BSON] = encodables.compactMap { try? encoder.encodeBSONValue($0) }
 
         return value
     }
@@ -153,7 +153,7 @@ extension Database where Self: QuerySupporting, Self.QueryFilter == FluentMongoQ
             return filters.first ?? [:]
         }
 
-        return [relation.rawValue: filters]
+        return [relation.rawValue: .array(filters.map { .document($0) })]
     }
 }
 

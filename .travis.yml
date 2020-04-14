@@ -3,9 +3,9 @@ language: generic
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:4.0.12
+  - export MONGO_DOCKER_IMAGE=mongo:4.0.16
   - export MONGO_BREW_VERSION=mongodb-community@4.0
-  - export MONGO_C_DRIVER=1.15.1
+  - export MONGO_C_DRIVER=1.16.2
 
 stages:
 - name: test
@@ -39,7 +39,7 @@ jobs:
     - stage: test
       name: Unit Tests
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.3
       before_script:
         - gem install bundler
         - bundle install
@@ -53,7 +53,7 @@ jobs:
         - swift --version
         - swift build
         - swift build -c release
-        - swift test
+        - swift test --sanitize=thread
         - swiftlint
 
 notifications:

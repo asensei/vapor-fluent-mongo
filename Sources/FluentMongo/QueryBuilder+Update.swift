@@ -20,7 +20,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$addToSet"] = partialData.mapValues { ["$each": $0] as FluentMongoQueryData }
+            partialCustomData["$addToSet"] = .document(partialData.mapValues { .document(["$each": $0]) })
             query.partialCustomData = partialCustomData
         }
 
@@ -40,7 +40,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$addToSet"] = partialData.mapValues { ["$each": $0] as FluentMongoQueryData }
+            partialCustomData["$addToSet"] = .document(partialData.mapValues { .document(["$each": $0]) })
             query.partialCustomData = partialCustomData
         }
 
@@ -60,7 +60,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$push"] = partialData.mapValues { ["$each": $0] as FluentMongoQueryData }
+            partialCustomData["$push"] = .document(partialData.mapValues { .document(["$each": $0]) })
             query.partialCustomData = partialCustomData
         }
 
@@ -80,7 +80,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$push"] = partialData.mapValues { ["$each": $0] as FluentMongoQueryData }
+            partialCustomData["$push"] = .document(partialData.mapValues { ["$each": $0] })
             query.partialCustomData = partialCustomData
         }
 
@@ -100,7 +100,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$pullAll"] = partialData
+            partialCustomData["$pullAll"] = .document(partialData)
             query.partialCustomData = partialCustomData
         }
 
@@ -120,7 +120,7 @@ extension QueryBuilder where Database == MongoDatabase, Result: Model {
 
         if let partialData = dummyQuery.partialData {
             var partialCustomData = query.partialCustomData ?? FluentMongoQueryData()
-            partialCustomData["$pullAll"] = partialData
+            partialCustomData["$pullAll"] = .document(partialData)
             query.partialCustomData = partialCustomData
         }
 

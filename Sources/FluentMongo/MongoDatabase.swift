@@ -15,14 +15,21 @@ public final class MongoDatabase: Database {
     /// This database's configuration.
     public let config: MongoDatabaseConfig
 
+    private let threadPool: BlockingIOThreadPool
+
     /// Creates a new `MongoDatabase`.
-    public init(config: MongoDatabaseConfig) {
+    public init(config: MongoDatabaseConfig, threadPool: BlockingIOThreadPool) {
         self.config = config
+        self.threadPool = threadPool
     }
 
     /// See `Database`
     public func newConnection(on worker: Worker) -> Future<MongoConnection> {
-        return MongoConnection.connect(config: self.config, on: worker)
+        return MongoConnection.connect(
+            config: self.config,
+            threadPool: self.threadPool,
+            on: worker.eventLoop
+        )
     }
 }
 
