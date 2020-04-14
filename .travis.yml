@@ -39,7 +39,7 @@ jobs:
     - stage: test
       name: Unit Tests
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.3
       before_script:
         - gem install bundler
         - bundle install
@@ -53,7 +53,7 @@ jobs:
         - swift --version
         - swift build
         - swift build -c release
-        - swift test
+        - swift test --sanitize=thread
         - swiftlint
 
 notifications:
