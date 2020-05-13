@@ -9,15 +9,13 @@
 import Foundation
 import FluentKit
 import MongoSwift
-
-
 /*
 struct MongoDatabaseDriver {
 
     // MARK: Initialization
 
     public init(
-        pool: ConnectionPool<MongoConnectionSource>,
+        pool: EventLoopGroupConnectionPool<MongoConnectionSource>,
         encoder: BSONEncoder = BSONEncoder(),
         decoder: BSONDecoder = BSONDecoder()
     ) {

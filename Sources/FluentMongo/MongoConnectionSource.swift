@@ -7,41 +7,33 @@
 //
 
 import Foundation
-import NIO
+import AsyncKit
 import FluentKit
-/*
-public struct MongoConnectionSource: ConnectionPoolSource {
 
+struct MongoConnectionSource: ConnectionPoolSource {
+    
     // MARK: Initialization
 
-    public init(
-        configuration: MongoConfiguration,
-        threadPool: NIOThreadPool,
-        logger: Logger = .init(label: "vapor.fluent.mongo.connection-source")
-    ) {
+    init(configuration: MongoConfiguration) {
         self.configuration = configuration
-        self.threadPool = threadPool
-        self.logger = logger
     }
 
     // MARK: Managing Connection Source
 
     private let configuration: MongoConfiguration
 
-    private let threadPool: NIOThreadPool
-
-    private let logger: Logger
-
     // MARK: ConnectionPoolSource
 
-    public func makeConnection(on eventLoop: EventLoop) -> EventLoopFuture<MongoConnection> {
-        return MongoConnection.connect(
-            to: self.configuration.connectionURL.absoluteString,
-            database: self.configuration.database,
-            options: self.configuration.options,
-            threadPool: threadPool,
-            on: eventLoop
-        )
+    public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<Never> {
+
+        fatalError()
+
+//        return MongoConnection.connect(
+//            to: self.configuration.connectionURL.absoluteString,
+//            database: self.configuration.database,
+//            options: self.configuration.options,
+//            threadPool: threadPool,
+//            on: eventLoop
+//        )
     }
 }
-*/
