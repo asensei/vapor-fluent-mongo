@@ -8,8 +8,8 @@
 
 import Foundation
 import MongoSwift
-/*
-public struct MongoConfiguration {
+
+struct MongoConfiguration {
 
     // MARK: Accessing Attributes
 
@@ -85,4 +85,3 @@ extension MongoConfiguration {
         case missingEnvironmentKey(EnvironmentKey)
     }
 }
-*/

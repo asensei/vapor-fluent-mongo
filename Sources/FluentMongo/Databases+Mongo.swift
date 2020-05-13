@@ -8,7 +8,6 @@
 
 import Foundation
 import NIO
-import AsyncKit
 import FluentKit
 import Logging
 import MongoSwift
