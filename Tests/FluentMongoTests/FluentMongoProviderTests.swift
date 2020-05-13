@@ -7,11 +7,10 @@
 //
 
 import XCTest
-import Fluent
 import FluentBenchmark
 import MongoSwift
 @testable import FluentMongo
-
+/*
 class FluentMongoProviderTests: XCTestCase {
 
     var benchmarker: Benchmarker<FluentMongo.MongoDatabase>!
@@ -28,7 +27,7 @@ class FluentMongoProviderTests: XCTestCase {
             )
 
             try MongoClient(config.connectionURL.absoluteString).db(config.database).drop()
-            self.database = MongoDatabase(config: config, threadPool: BlockingIOThreadPool(numberOfThreads: 2))
+            self.database = MongoDatabase(config: config)
             self.benchmarker = try Benchmarker(self.database, on: eventLoop, onFail: XCTFail)
         } catch {
             XCTFail(error.localizedDescription)
@@ -434,4 +433,4 @@ class FluentMongoProviderTests: XCTestCase {
         }
     }
     */
-}
+}*/

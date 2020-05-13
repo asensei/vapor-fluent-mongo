@@ -7,9 +7,8 @@
 //
 
 import Foundation
-import Fluent
 import FluentMongo
-
+/*
 final class User: FluentMongoModel, Model {
 
     //static let updatedAtKey: TimestampKey? = \.updatedAt
@@ -64,4 +63,4 @@ extension User {
             return User.query(on: conn).update(\.age, to: nil).run()
         }
     }
-}
+}*/

@@ -24,16 +24,16 @@ jobs:
         - docker pull ${MONGO_DOCKER_IMAGE}
         - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
-            && apt-get -y install wget cmake libssl-dev libsasl2-dev
+            && apt-get -y install wget cmake
             && wget https://github.com/mongodb/mongo-c-driver/releases/download/${MONGO_C_DRIVER}/mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
             && tar xzf mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
             && pushd mongo-c-driver-${MONGO_C_DRIVER}
             && cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr
             && make install
             && popd
-            && swift build -c debug
-            && swift build -c release
-            && swift test -c debug --sanitize=thread --enable-test-discovery";        
+            && swift build --enable-test-discovery -c debug
+            && swift build --enable-test-discovery -c release
+            && swift test --enable-test-discovery -c debug --sanitize=thread";        
         - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
 
     - stage: test

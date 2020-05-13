@@ -1,30 +1,27 @@
 //
-//  MongoDatabaseConfig.swift
+//  MongoConfiguration.swift
 //  FluentMongo
 //
-//  Created by Valerio Mazzeo on 30/11/2018.
-//  Copyright © 2018 Asensei Inc. All rights reserved.
+//  Created by Valerio Mazzeo on 21/10/2019.
+//  Copyright © 2019 Asensei Inc. All rights reserved.
 //
 
 import Foundation
 import MongoSwift
+/*
+public struct MongoConfiguration {
 
-/// Config options for a `MongoDatabase`
-public struct MongoDatabaseConfig {
+    // MARK: Accessing Attributes
 
-    /// Creates a `MongoDatabaseConfig` with default settings.
-    public static func `default`(database: String, options: ClientOptions? = nil) throws -> MongoDatabaseConfig {
-        return try .init(database: database, options: options)
-    }
-
-    /// Connection string.
     public let connectionURL: URL
 
     public let database: String
 
     public let options: ClientOptions?
 
-    /// Creates a new `MongoDatabaseConfig`.
+    // MARK: Initialization
+
+    /// Creates a new `MongoConfiguration`.
     public init(connectionString: String, options: ClientOptions? = nil) throws {
         guard let url = URL(string: connectionString) else {
             throw URLError(.badURL)
@@ -34,7 +31,7 @@ public struct MongoDatabaseConfig {
     }
 
     public init(connectionURL: URL, options: ClientOptions? = nil) throws {
-        guard let database = connectionURL.databaseName else {
+        guard let database = connectionURL.path.split(separator: "/").last.flatMap(String.init) else {
             throw URLError(.badURL)
         }
 
@@ -51,7 +48,7 @@ public struct MongoDatabaseConfig {
         port: Int = 27017,
         database: String,
         options: ClientOptions? = nil
-        ) throws {
+    ) throws {
 
         var components = URLComponents()
         components.scheme = scheme
@@ -78,7 +75,7 @@ public struct MongoDatabaseConfig {
     }
 }
 
-extension MongoDatabaseConfig {
+extension MongoConfiguration {
 
     public enum EnvironmentKey: String {
         case connectionURL = "FLUENT_MONGO_CONNECTION_URL"
@@ -88,3 +85,4 @@ extension MongoDatabaseConfig {
         case missingEnvironmentKey(EnvironmentKey)
     }
 }
+*/

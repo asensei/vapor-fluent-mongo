@@ -7,9 +7,8 @@
 //
 
 import Foundation
-import Fluent
 import FluentMongo
-
+/*
 final class Toy: FluentMongoModel, Model {
 
     typealias Database = MongoDatabase
@@ -30,3 +29,4 @@ final class Toy: FluentMongoModel, Model {
         return self.siblings()
     }
 }
+*/

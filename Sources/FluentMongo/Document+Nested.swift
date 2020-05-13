@@ -8,19 +8,19 @@
 
 import Foundation
 import MongoSwift
-
+/*
 // Review when https://jira.mongodb.org/browse/SWIFT-273 will be fixed.
 extension Document {
-    public subscript(keys: [String]) -> BSON? {
+    public subscript(keys: [String]) -> BSONValue? {
         get {
             guard !keys.isEmpty else {
                 return nil
             }
 
-            var value: BSON? = .document(self)
+            var value: BSONValue? = self
 
             for key in keys {
-                value = (value?.documentValue)?[key]
+                value = (value as? Document)?[key]
             }
 
             return value
@@ -39,16 +39,16 @@ extension Document {
 
                 var path = keys
                 let component = path.removeFirst()
-                var next = document[component]?.documentValue ?? Document()
+                var next = document[component] as? Document ?? Document()
                 setNewValue(for: path, in: &next)
-                document[component] = .document(next)
+                document[component] = next
             }
 
             setNewValue(for: keys, in: &self)
         }
     }
 
-    public subscript(keys: String...) -> BSON? {
+    public subscript(keys: String...) -> BSONValue? {
         get {
             return self[keys]
         }
@@ -77,17 +77,10 @@ extension Document {
 
             for item in document {
                 switch document[item.key] {
-                case .document(let value):
-                    mutableFilter[ensureNoRootNameSpace(item.key)] = .document(removeKeysPrefix(value))
-                case .array(let value):
-                    mutableFilter[ensureNoRootNameSpace(item.key)] = .array(value.map {
-                        switch $0 {
-                        case .document(let value):
-                            return .document(removeKeysPrefix(value))
-                        default:
-                            return $0
-                        }
-                    })
+                case .some(let value as Document):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = removeKeysPrefix(value)
+                case .some(let value as [Document]):
+                    mutableFilter[ensureNoRootNameSpace(item.key)] = value.map { removeKeysPrefix($0) }
                 case .some(let value):
                     mutableFilter[ensureNoRootNameSpace(item.key)] = value
                 case .none:
@@ -101,3 +94,4 @@ extension Document {
         return removeKeysPrefix(self)
     }
 }
+*/

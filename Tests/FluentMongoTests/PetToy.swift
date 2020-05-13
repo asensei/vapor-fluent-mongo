@@ -7,9 +7,8 @@
 //
 
 import Foundation
-import Fluent
 import FluentMongo
-
+/*
 final class PetToy: FluentMongoModel, Pivot {
 
     typealias Database = MongoDatabase
@@ -28,3 +27,4 @@ final class PetToy: FluentMongoModel, Pivot {
     var petId: Pet.ID
     var toyId: Toy.ID
 }
+*/
