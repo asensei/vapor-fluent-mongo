@@ -24,16 +24,13 @@ struct MongoConnectionSource: ConnectionPoolSource {
 
     // MARK: ConnectionPoolSource
 
-    public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<Never> {
-
-        fatalError()
-
-//        return MongoConnection.connect(
-//            to: self.configuration.connectionURL.absoluteString,
-//            database: self.configuration.database,
-//            options: self.configuration.options,
-//            threadPool: threadPool,
-//            on: eventLoop
-//        )
+    public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<MongoConnection> {
+        return MongoConnection.connect(
+            to: self.configuration.connectionURL.absoluteString,
+            database: self.configuration.database,
+            options: self.configuration.options,
+            logger: logger,
+            on: eventLoop
+        )
     }
 }
