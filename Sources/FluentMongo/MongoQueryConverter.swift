@@ -9,8 +9,8 @@
 import Foundation
 import FluentKit
 import MongoSwift
-/*
-public struct MongoQueryConverter {
+
+struct MongoQueryConverter {
 
     public init(_ query: DatabaseQuery, using encoder: BSONEncoder) {
         self.query = query
@@ -21,93 +21,97 @@ public struct MongoQueryConverter {
     
     private let encoder: BSONEncoder
 
-    public func convert(_ database: MongoDatabase) throws -> [DatabaseRow] {
+    public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
-        let results: [DatabaseRow]
+        let future: EventLoopFuture<[DatabaseOutput]>
 
         switch self.query.action {
         case .read:
-            results = try self.find(database)
+            future = self.find(database, on: eventLoop)
         case .create:
-            results = try self.insert(database)
+            future = self.insert(database, on: eventLoop)
         case .update:
-            results = try self.update(database)
+            future = self.update(database, on: eventLoop)
         case .delete:
-            results = try self.delete(database)
+            future = self.delete(database, on: eventLoop)
+        case .aggregate(_):
+            fatalError()
         case .custom(let any):
             fatalError()
-            //return custom(any)
+            //future custom(any)
         }
 
-        return results
+        return future
     }
 }
 
 extension MongoQueryConverter {
 
-    private func find(_ database: MongoDatabase) throws -> [DatabaseRow] {
+    private func find(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         #warning("TODO: implement this")
-        return []
+        return eventLoop.makeSucceededFuture([])
     }
 
-    private func insert(_ database: MongoDatabase) throws -> [DatabaseRow] {
+    private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
-        var documents = [Document]()
+//        var documents = [Document]()
+//
+//        let fields = try self.query.fields.map { try $0.field().path }
+//
+//        for input in self.query.input {
+//            var document = Document()
+//            for (field, value) in zip(fields, input) where !field.starts(with: ["id"]) {
+//                #warning("TODO: rename id to _id")
+//                document[field] = try self.bsonValue(value)
+//            }
+//            documents.append(document)
+//        }
+//
+//        func defaultRow() -> [DatabaseRow] {
+//            // tanner: you should always return a row on create containing all the default values - if there are no default or db generated values, then just return an empty one
+//            return documents.count == 1 ? [Document()] : []
+//        }
+//
+//        let collection = database.collection(self.query.schema)
+//
+//        switch documents.count {
+//        case 1:
+//            guard let result = try collection.insertOne(documents.removeFirst()) else {
+//                return defaultRow()
+//            }
+//            // TODO: Log result
+//            #warning("TODO: Handle this correctly")
+//            return [["fluentID": 0] as Document]
+//        default:
+//            let result = try collection.insertMany(documents)
+//            // TODO: Log result
+//            return defaultRow()
+//        }
+        #warning("TODO: implement this")
+        return eventLoop.makeSucceededFuture([])
+    }
 
-        let fields = try self.query.fields.map { try $0.field().path }
+    private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        #warning("TODO: implement this")
+        return eventLoop.makeSucceededFuture([])
+    }
 
-        for input in self.query.input {
-            var document = Document()
-            for (field, value) in zip(fields, input) where !field.starts(with: ["id"]) {
-                #warning("TODO: rename id to _id")
-                document[field] = try self.bsonValue(value)
-            }
-            documents.append(document)
-        }
-
-        func defaultRow() -> [DatabaseRow] {
-            // tanner: you should always return a row on create containing all the default values - if there are no default or db generated values, then just return an empty one
-            return documents.count == 1 ? [Document()] : []
-        }
-
+    private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         let collection = database.collection(self.query.schema)
+//        let filter = try self.filter(database)
+//        if let result = try collection.deleteMany(filter) {
+//            #warning("TODO: Log")
+//        }
 
-        switch documents.count {
-        case 1:
-            guard let result = try collection.insertOne(documents.removeFirst()) else {
-                return defaultRow()
-            }
-            // TODO: Log result
-            #warning("TODO: Handle this correctly")
-            return [["fluentID": 0] as Document]
-        default:
-            let result = try collection.insertMany(documents)
-            // TODO: Log result
-            return defaultRow()
-        }
+        return eventLoop.makeSucceededFuture([])
     }
 
-    private func update(_ database: MongoDatabase) throws -> [DatabaseRow] {
+    private func custom(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         #warning("TODO: implement this")
-        return []
-    }
-
-    private func delete(_ database: MongoDatabase) throws -> [DatabaseRow] {
-        let collection = database.collection(self.query.schema)
-        let filter = try self.filter(database)
-        if let result = try collection.deleteMany(filter) {
-            #warning("TODO: Log")
-        }
-
-        return []
-    }
-
-    private func custom(_ database: MongoDatabase) throws -> [DatabaseRow] {
-        #warning("TODO: implement this")
-        return []
+        return eventLoop.makeSucceededFuture([])
     }
 }
-
+/*
 extension MongoQueryConverter {
 
     private func bsonValue(_ value: DatabaseQuery.Value) throws -> BSONValue {

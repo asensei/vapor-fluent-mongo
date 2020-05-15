@@ -10,7 +10,7 @@ import Foundation
 import AsyncKit
 import MongoSwift
 
-public final class MongoConnection: ConnectionPoolItem {
+final class MongoConnection: ConnectionPoolItem, MongoDatabase {
 
     public static func connect(
         to connectionString: String,
@@ -64,7 +64,7 @@ public final class MongoConnection: ConnectionPoolItem {
 
     private let client: MongoClient
 
-    private let logger: Logger
+    let logger: Logger
 
     // MARK: ConnectionPoolItem
 
@@ -79,5 +79,28 @@ public final class MongoConnection: ConnectionPoolItem {
                 break
             }
         }
+    }
+
+    // MARK: MongoDatabase
+
+    public func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
+
+        let database = self.client.db(self.database)
+
+        return closure(database, self.eventLoop).map { results in
+            guard !results.isEmpty else {
+                return
+            }
+
+            for result in results {
+                onOutput(result)
+            }
+
+            return
+        }
+    }
+
+    public func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        closure(self)
     }
 }

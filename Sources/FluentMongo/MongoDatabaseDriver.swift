@@ -7,9 +7,11 @@
 //
 
 import Foundation
+import AsyncKit
 import FluentKit
-import MongoSwift
-/*
+
+// MARK: - MongoDatabaseDriver
+
 struct MongoDatabaseDriver {
 
     // MARK: Initialization
@@ -26,7 +28,7 @@ struct MongoDatabaseDriver {
 
     // MARK: Accessing Attributes
 
-    public let pool: ConnectionPool<MongoConnectionSource>
+    let pool: EventLoopGroupConnectionPool<MongoConnectionSource>
 
     let encoder: BSONEncoder
 
@@ -35,26 +37,46 @@ struct MongoDatabaseDriver {
 
 extension MongoDatabaseDriver: DatabaseDriver {
 
-    public var eventLoopGroup: EventLoopGroup {
+    var eventLoopGroup: EventLoopGroup {
         return self.pool.eventLoopGroup
     }
 
-    func execute(query: DatabaseQuery, database: Database, onRow: @escaping (DatabaseRow) -> ()) -> EventLoopFuture<Void> {
-        return self.pool.withConnection { connection in
-            return connection.execute(MongoQueryConverter(query, using: self.encoder).convert) { document in
-                onRow(document)
-            }
-        }
-    }
-
-    func execute(schema: DatabaseSchema, database: Database) -> EventLoopFuture<Void> {
-        return self.pool.withConnection { connection in
-            return connection.execute(MongoSchemaConverter(schema).convert) { _ in }
-        }
+    func makeDatabase(with context: DatabaseContext) -> Database {
+        FluentMongoDatabase(
+            database: ConnectionPoolMongoDatabase(
+                pool: self.pool.pool(for: context.eventLoop),
+                logger: context.logger
+            ),
+            context: context,
+            encoder: self.encoder,
+            decoder: self.decoder
+        )
     }
 
     func shutdown() {
         self.pool.shutdown()
     }
 }
-*/
+
+// MARK: - ConnectionPoolMongoDatabase
+
+struct ConnectionPoolMongoDatabase: MongoDatabase {
+
+    let pool: EventLoopConnectionPool<MongoConnectionSource>
+
+    let logger: Logger
+
+    var eventLoop: EventLoop {
+        self.pool.eventLoop
+    }
+
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
+        self.withConnection {
+            $0.execute(closure, onOutput)
+        }
+    }
+
+    func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.pool.withConnection(logger: self.logger, closure)
+    }
+}

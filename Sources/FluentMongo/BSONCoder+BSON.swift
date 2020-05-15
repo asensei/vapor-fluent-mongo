@@ -1,5 +1,5 @@
 //
-//  BSONCoder+BSONValue.swift
+//  BSONCoder+BSON.swift
 //  FluentMongo
 //
 //  Created by Valerio Mazzeo on 24/10/2019.
@@ -9,13 +9,13 @@
 import Foundation
 import MongoSwift
 
-/*extension BSONEncoder {
+extension BSONEncoder {
 
-    public func encode(_ value: Encodable) throws -> BSONValue {
+    public func encode(_ value: Encodable) throws -> BSON {
         let wrappedData = ["value": AnyEncodable(value)]
         let document: Document = try self.encode(wrappedData)
 
-        return document["value"] ?? BSONNull()
+        return document["value"] ?? .null
     }
 }
 
@@ -77,4 +77,3 @@ extension BSONDecoder {
         }
     }
 }
-*/

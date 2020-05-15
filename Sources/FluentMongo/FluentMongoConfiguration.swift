@@ -7,7 +7,8 @@
 //
 
 import Foundation
-
+import AsyncKit
+import FluentKit
 
 struct FluentMongoConfiguration: DatabaseConfiguration {
 
@@ -19,17 +20,17 @@ struct FluentMongoConfiguration: DatabaseConfiguration {
 
     func makeDriver(for databases: Databases) -> DatabaseDriver {
 
-        fatalError()
+        let db = MongoConnectionSource(
+            configuration: self.configuration
+        )
 
-//        let db = MySQLConnectionSource(
-//            configuration: configuration
-//        )
-//        let pool = EventLoopGroupConnectionPool(
-//            source: db,
-//            maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
-//            on: databases.eventLoopGroup
-//        )
-//        return _FluentMySQLDriver(pool: pool)
+        let pool = EventLoopGroupConnectionPool(
+            source: db,
+            maxConnectionsPerEventLoop: self.maxConnectionsPerEventLoop,
+            on: databases.eventLoopGroup
+        )
+
+        return MongoDatabaseDriver(pool: pool)
     }
 }
 
