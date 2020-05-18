@@ -12,14 +12,17 @@ import MongoSwift
 
 struct MongoQueryConverter {
 
-    public init(_ query: DatabaseQuery, using encoder: BSONEncoder) {
+    public init(_ query: DatabaseQuery, encoder: BSONEncoder, decoder: BSONDecoder) {
         self.query = query
         self.encoder = encoder
+        self.decoder = decoder
     }
 
     private let query: DatabaseQuery
     
     private let encoder: BSONEncoder
+
+    private let decoder: BSONDecoder
 
     public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
@@ -53,42 +56,26 @@ extension MongoQueryConverter {
     }
 
     private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        do {
+            let documents = try self.query.input.compactMap { try self.bson($0).documentValue }
+            let collection = database.collection(self.query.schema)
 
-//        var documents = [Document]()
-//
-//        let fields = try self.query.fields.map { try $0.field().path }
-//
-//        for input in self.query.input {
-//            var document = Document()
-//            for (field, value) in zip(fields, input) where !field.starts(with: ["id"]) {
-//                #warning("TODO: rename id to _id")
-//                document[field] = try self.bsonValue(value)
-//            }
-//            documents.append(document)
-//        }
-//
-//        func defaultRow() -> [DatabaseRow] {
-//            // tanner: you should always return a row on create containing all the default values - if there are no default or db generated values, then just return an empty one
-//            return documents.count == 1 ? [Document()] : []
-//        }
-//
-//        let collection = database.collection(self.query.schema)
-//
-//        switch documents.count {
-//        case 1:
-//            guard let result = try collection.insertOne(documents.removeFirst()) else {
-//                return defaultRow()
-//            }
-//            // TODO: Log result
-//            #warning("TODO: Handle this correctly")
-//            return [["fluentID": 0] as Document]
-//        default:
-//            let result = try collection.insertMany(documents)
-//            // TODO: Log result
-//            return defaultRow()
-//        }
-        #warning("TODO: implement this")
-        return eventLoop.makeSucceededFuture([])
+            return collection.insertMany(documents).flatMapThrowing { result in
+                guard let result = result else {
+                    throw Error.invalidResult
+                }
+
+                guard documents.count == result.insertedCount else {
+                    throw Error.insertManyMismatch(documents.count, result.insertedCount)
+                }
+
+                return result.insertedIds.map {
+                    Document(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(using: self.decoder)
+                }
+            }
+        } catch {
+            return eventLoop.makeFailedFuture(error)
+        }
     }
 
     private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
@@ -111,25 +98,29 @@ extension MongoQueryConverter {
         return eventLoop.makeSucceededFuture([])
     }
 }
-/*
+
 extension MongoQueryConverter {
 
-    private func bsonValue(_ value: DatabaseQuery.Value) throws -> BSONValue {
+    private func bson(_ value: DatabaseQuery.Value) throws -> BSON {
         switch value {
         case .bind(let encodable):
             return try self.encoder.encode(encodable)
         case .null:
-            return BSONNull()
+            return .null
         case .array(let values):
-            return try values.map { try self.bsonValue($0) }
-        case .default:
-            return BSONNull() // ignore if not _id
-        case .custom(let value as BSONValue):
+            return try .array(values.map { try self.bson($0) })
+        case .dictionary(let dict):
+            return try .document(dict.reduce(into: Document()) { result, element in
+                result[element.key.mongoKey] = try self.bson(element.value)
+            })
+        case .enumCase(let value):
+            return .string(value)
+        case .custom(let value as BSON):
             return value
         case .custom:
             fatalError() // not supported
-        case .dictionary(let dict):
-            fatalError() // never used
+        case .default:
+            fatalError()
         }
     }
 
@@ -161,7 +152,7 @@ extension MongoQueryConverter {
         }
     }
 }
-
+/*
 extension MongoQueryConverter {
 
     private func joins() throws -> [Document] {

@@ -44,14 +44,14 @@ struct FluentMongoDatabase: Database {
 
     func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
         return self.database.withConnection { connection in
-            return connection.execute(MongoQueryConverter(query, using: self.encoder).convert) { result in
+            return connection.execute(MongoQueryConverter(query, encoder: self.encoder, decoder: self.decoder).convert) { result in
                 onOutput(result)
             }
         }
     }
 
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
-        fatalError()
+        return self.eventLoop.makeSucceededFuture(Void())
     }
 
     func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
