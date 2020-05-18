@@ -8,162 +8,34 @@
 
 import XCTest
 import NIO
-import AsyncKit
-import FluentBenchmark
-import FluentMongo
 import Logging
+import FluentBenchmark
+import FluentKit
 import MongoSwift
+@testable import FluentMongo
 
-/*
 final class FluentMongoTests: XCTestCase {
 
-    func testAll() throws {
-        try self.benchmarker.testAll()
-    }
-
-    func testCreate() throws {
-        try self.benchmarker.testCreate()
-    }
-
-    func testRead() throws {
-        try self.benchmarker.testRead()
-    }
-
-    func testUpdate() throws {
-        try self.benchmarker.testUpdate()
-    }
-
-    func testDelete() throws {
-        try self.benchmarker.testDelete()
-    }
-
-    func testEagerLoadChildren() throws {
-        try self.benchmarker.testEagerLoadChildren()
-    }
-
-    func testEagerLoadParent() throws {
-        try self.benchmarker.testEagerLoadParent()
-    }
-
-    func testEagerLoadParentJoin() throws {
-        try self.benchmarker.testEagerLoadParentJoin()
-    }
-
-    func testEagerLoadParentJSON() throws {
-        try self.benchmarker.testEagerLoadParentJSON()
-    }
-
-    func testEagerLoadChildrenJSON() throws {
-        try self.benchmarker.testEagerLoadChildrenJSON()
-    }
-
-    func testMigrator() throws {
-        try self.benchmarker.testMigrator()
-    }
-
-    func testMigratorError() throws {
-        try self.benchmarker.testMigratorError()
-    }
-
-    func testJoin() throws {
-        try self.benchmarker.testJoin()
-    }
-
-    func testBatchCreate() throws {
-        try self.benchmarker.testBatchCreate()
-    }
-
-    func testBatchUpdate() throws {
-        try self.benchmarker.testBatchUpdate()
-    }
-
-    func testNestedModel() throws {
-        try self.benchmarker.testNestedModel()
-    }
-
-    func testAggregates() throws {
-        try self.benchmarker.testAggregates()
-    }
-
-    func testIdentifierGeneration() throws {
-        try self.benchmarker.testIdentifierGeneration()
-    }
-
-    func testNullifyField() throws {
-        try self.benchmarker.testNullifyField()
-    }
-
-    func testChunkedFetch() throws {
-        try self.benchmarker.testChunkedFetch()
-    }
-
-    func testUniqueFields() throws {
-        try self.benchmarker.testUniqueFields()
-    }
-
-    func testAsyncCreate() throws {
-        try self.benchmarker.testAsyncCreate()
-    }
-
-    func testSoftDelete() throws {
-        try self.benchmarker.testSoftDelete()
-    }
-
-    func testTimestampable() throws {
-        try self.benchmarker.testTimestampable()
-    }
-
-    func testLifecycleHooks() throws {
-        try self.benchmarker.testLifecycleHooks()
-    }
-
-    func testSort() throws {
-        try self.benchmarker.testSort()
-    }
-
-    func testUUIDModel() throws {
-        try self.benchmarker.testUUIDModel()
-    }
-
-    func testNewModelDecode() throws {
-        try self.benchmarker.testNewModelDecode()
-    }
-
-    func testSiblingsAttach() throws {
-        try self.benchmarker.testSiblingsAttach()
-    }
-
-    func testParentGet() throws {
-        try self.benchmarker.testParentGet()
-    }
-
-    func testParentSerialization() throws {
-        try self.benchmarker.testParentSerialization()
-    }
-
-    func testSiblingsEagerLoad() throws {
-        try self.benchmarker.testSiblingsEagerLoad()
-    }
-
-    func testMultipleJoinSameTable() throws {
-        try self.benchmarker.testMultipleJoinSameTable()
-    }
-
-    func testOptionalParent() throws {
-        try self.benchmarker.testOptionalParent()
-    }
-
     var benchmarker: FluentBenchmarker {
-        return .init(database: self.dbs.default())
+        return .init(databases: self.dbs)
     }
-    var threadPool: NIOThreadPool!
     var eventLoopGroup: EventLoopGroup!
+    var threadPool: NIOThreadPool!
     var dbs: Databases!
+    var db: Database {
+        self.benchmarker.database
+    }
+    var mongo: FluentMongo.MongoDatabase {
+        self.db as! FluentMongo.MongoDatabase
+    }
 
-    override func setUp() {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.threadPool = .init(numberOfThreads: 2)
+        self.threadPool = NIOThreadPool(numberOfThreads: 1)
+        self.dbs = Databases(threadPool: threadPool, on: self.eventLoopGroup)
 
         let configuration = try! MongoConfiguration(
             host: "localhost",
@@ -171,25 +43,54 @@ final class FluentMongoTests: XCTestCase {
             database: "vapor_database"
         )
 
-        try? MongoClient(configuration.connectionURL.absoluteString).db(configuration.database).drop()
+        try MongoClient(configuration.connectionURL.absoluteString, using: self.eventLoopGroup)
+            .db(configuration.database)
+            .drop()
+            .wait()
 
-        self.dbs = Databases()
-        self.dbs.mongo(
-            configuration: configuration,
-            threadPool: self.threadPool,
-            poolConfiguration: .init(maxConnections: 8),
-            on: self.eventLoopGroup
-        )
+        try self.dbs.use(.mongo(connectionURL: configuration.connectionURL), as: .mongo)
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         self.dbs.shutdown()
-        self.dbs = nil
-        try! self.threadPool.syncShutdownGracefully()
-        self.threadPool = nil
-        try! self.eventLoopGroup.syncShutdownGracefully()
-        self.eventLoopGroup = nil
+        try self.threadPool.syncShutdownGracefully()
+        try self.eventLoopGroup.syncShutdownGracefully()
+
+        try super.tearDownWithError()
     }
+
+//    func testAll() throws { try self.benchmarker.testAll() }
+//    func testAggregate() throws { try self.benchmarker.testAggregate() }
+//    func testArray() throws { try self.benchmarker.testArray() }
+//    func testBatch() throws { try self.benchmarker.testBatch() }
+//    func testChildren() throws { try self.benchmarker.testChildren() }
+//    func testChunk() throws { try self.benchmarker.testChunk() }
+//    func testCRUD() throws { try self.benchmarker.testCRUD() }
+//    func testEagerLoad() throws { try self.benchmarker.testEagerLoad() }
+//    func testEnum() throws { try self.benchmarker.testEnum() }
+//    func testFilter() throws { try self.benchmarker.testFilter() }
+//    func testGroup() throws { try self.benchmarker.testGroup() }
+//    func testID() throws { try self.benchmarker.testID() }
+//    func testJoin() throws { try self.benchmarker.testJoin() }
+//    func testMiddleware() throws { try self.benchmarker.testMiddleware() }
+//    func testMigrator() throws { try self.benchmarker.testMigrator() }
+//    func testModel() throws { try self.benchmarker.testModel() }
+//    func testOptionalParent() throws { try self.benchmarker.testOptionalParent() }
+//    func testPagination() throws { try self.benchmarker.testPagination() }
+//    func testParent() throws { try self.benchmarker.testParent() }
+//    func testPerformance() throws { try self.benchmarker.testPerformance() }
+//    func testRange() throws { try self.benchmarker.testRange() }
+//    func testSet() throws { try self.benchmarker.testSet() }
+//    func testSiblings() throws { try self.benchmarker.testSiblings() }
+//    func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
+//    func testSort() throws { try self.benchmarker.testSort() }
+//    func testTimestamp() throws { try self.benchmarker.testTimestamp() }
+//    func testTransaction() throws { try self.benchmarker.testTransaction() }
+//    func testUnique() throws { try self.benchmarker.testUnique() }
+}
+
+func env(_ name: String) -> String? {
+    return ProcessInfo.processInfo.environment[name]
 }
 
 let isLoggingConfigured: Bool = {
@@ -200,4 +101,3 @@ let isLoggingConfigured: Bool = {
     }
     return true
 }()
-*/
