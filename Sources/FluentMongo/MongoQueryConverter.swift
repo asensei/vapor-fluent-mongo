@@ -51,7 +51,42 @@ struct MongoQueryConverter {
 extension MongoQueryConverter {
 
     private func find(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        #warning("TODO: implement this")
+
+        let collection = database.collection(self.query.schema)
+
+        do {
+            let pipeline = try self.aggregationPipeline()
+
+            return collection.aggregate(pipeline, options: nil).flatMap { cursor in
+                cursor.toArray().mapEach { $0.databaseOutput(using: self.decoder) }
+            }
+        } catch {
+            return eventLoop.makeFailedFuture(error)
+        }
+
+//        let cursor = try collection.aggregate(query.aggregationPipeline(), options: query.aggregateOptions)
+//        cursor.forEach { document in
+//            let callback = self.eventLoop.submit {
+//                try handler(document)
+//            }
+//            callbacks.append(callback)
+//        }
+//        // Running `count` in an aggregation pipeline produce a `nil` document when the provided filter does not match any. Therefore we have to manually set the count to `0`.
+//        if let aggregate = query.keys.computed.first?.aggregate, callbacks.count == 0 {
+//            var callback: EventLoopFuture<Void>?
+//            switch aggregate {
+//            case .count:
+//                callback = self.eventLoop.submit {
+//                    try handler([FluentMongoQuery.defaultAggregateField: 0])
+//                }
+//            case .group:
+//                callback = self.eventLoop.submit {
+//                    try handler([FluentMongoQuery.defaultAggregateField: .null])
+//                }
+//            }
+//            callback.map { callbacks.append($0) }
+//        }
+
         return eventLoop.makeSucceededFuture([])
     }
 
@@ -152,9 +187,9 @@ extension MongoQueryConverter {
         }
     }
 }
-/*
-extension MongoQueryConverter {
 
+extension MongoQueryConverter {
+/*
     private func joins() throws -> [Document] {
         return try self.query.joins.map { join in
             switch join {
@@ -183,6 +218,7 @@ extension MongoQueryConverter {
             }
         }
     }
+*/
 
     private func match() throws -> Document? {
 
@@ -195,11 +231,12 @@ extension MongoQueryConverter {
             // Build
             switch filter {
             case .value(let field, let method, let value):
-                #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-                let pathWithNamespace = try field.field()/*pathWithNamespace*/.path.joined(separator: ".")
-                let op = self.operator(from: method)
-                let value = try self.bsonValue(value)
-                document[pathWithNamespace] = [op: value] as Document
+//                #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
+//                let pathWithNamespace = try field.field()/*pathWithNamespace*/.path.joined(separator: ".")
+//                let op = self.operator(from: method)
+//                let value = try self.bsonValue(value)
+//                document[pathWithNamespace] = [op: value] as Document
+                fatalError()
             case .field(let lhs, let method, let rhs):
                 fatalError()
             case .group(let filters, let relation):
@@ -232,11 +269,11 @@ extension MongoQueryConverter {
             let key: String
 
             switch field {
-            case .field(let path, let schema, let alias):
+            case .path(let value, let schema):
                 let path = self.query.schema == schema
-                    ? path
-                    : DatabaseQuery.Field.QueryField(path: path, schema: schema, alias: alias).pathWithNamespace
-                key = path.joined(separator: ".")
+                    ? value
+                    : ([.string(schema)] + value)
+                key = path.mongoKey
             case .custom(let value as String):
                 key = value
             default:
@@ -254,7 +291,7 @@ extension MongoQueryConverter {
 
         return projection
     }
-
+/*
     private func distinct() -> [Document]? {
         #warning("TODO: Not supported")
         guard /*self.query.isDistinct*/ false else {
@@ -300,8 +337,8 @@ extension MongoQueryConverter {
         stages.append(["$replaceRoot": ["newRoot": "$doc"] as Document])
 
         return stages
-    }
-
+    }*/
+/*
     private func sort() -> Document? {
         #warning("TODO: implement this")
         return nil
@@ -321,6 +358,7 @@ extension MongoQueryConverter {
         #warning("TODO: implement this")
         return nil
     }
+*/
 }
 
 extension MongoQueryConverter {
@@ -333,7 +371,7 @@ extension MongoQueryConverter {
                 return
             }
 
-            pipeline.append([name: value])
+            pipeline.append([name: .document(value)])
         }
 
         func appendStages(_ values: [Document]?) {
@@ -344,17 +382,19 @@ extension MongoQueryConverter {
             pipeline.append(contentsOf: values)
         }
 
-        let joins = try self.joins()
-        appendStages(joins)
+        // TODO: re-enable all the stages
+        //let joins = try self.joins()
+        //appendStages(joins)
         appendStage("$match", try self.match())
         appendStage("$project", self.projection())
-        appendStages(self.distinct())
-        appendStage("$sort", self.sort())
-        appendStage("$skip", self.skip())
-        appendStage("$limit", self.limit())
-        appendStages(self.aggregates())
+        //appendStages(self.distinct())
+        //appendStage("$sort", self.sort())
+        //appendStage("$skip", self.skip())
+        //appendStage("$limit", self.limit())
+        //appendStages(self.aggregates())
 
         // Remove joined collections from the output
+/*
         if !joins.isEmpty {
             var projection = Document()
             for join in joins {
@@ -365,23 +405,28 @@ extension MongoQueryConverter {
             }
             appendStage("$project", projection)
         }
-
+*/
         return pipeline
     }
 
-    private func filter(_ database: MongoDatabase) throws -> Document {
+    private func filter(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Document> {
 
         guard !self.query.filters.isEmpty else {
-            return [:]
+            return eventLoop.makeSucceededFuture(.init())
         }
 
-        var pipeline = try self.aggregationPipeline()
-        pipeline.append(["$project": ["_id": true] as Document])
+        do {
+            var pipeline = try self.aggregationPipeline()
+            pipeline.append(["$project": ["_id": true]])
 
-        let cursor = try database.collection(self.query.schema).aggregate(pipeline)
-        let identifiers = cursor.compactMap { $0["_id"] }
-
-        return ["_id": ["$in": identifiers] as Document]
+            return database.collection(self.query.schema).aggregate(pipeline).flatMap { cursor in
+                cursor.toArray().map {
+                    ["_id": ["$in": .array($0.compactMap { $0["_id"] })]]
+                }
+            }
+        } catch {
+            return eventLoop.makeFailedFuture(error)
+        }
     }
 }
-*/
+
