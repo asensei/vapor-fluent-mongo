@@ -30,12 +30,12 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     }
 
     func contains(_ path: [FieldKey]) -> Bool {
-        return self.document[dynamicMember: path.mongoKey] != nil
+        return self.document[path.mongoKeys] != nil
     }
 
     func decode<T: Decodable>(_ path: [FieldKey], as type: T.Type) throws -> T {
 
-        let value = self.document[dynamicMember: path.mongoKey] ?? .null
+        let value = self.document[path.mongoKeys] ?? .null
         let document: Document = ["value": value]
 
         return try self.decoder.decode(type, from: document, forKey: "value")
@@ -60,5 +60,9 @@ extension Array where Element == FieldKey {
 
     var mongoKey: String {
         return self.map { $0.mongoKey }.joined(separator: ".")
+    }
+
+    var mongoKeys: [String] {
+        return self.map { $0.mongoKey }
     }
 }
