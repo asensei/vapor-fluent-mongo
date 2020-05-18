@@ -43,10 +43,7 @@ final class FluentMongoTests: XCTestCase {
             database: "vapor_database"
         )
 
-        try MongoClient(configuration.connectionURL.absoluteString, using: self.eventLoopGroup)
-            .db(configuration.database)
-            .drop()
-            .wait()
+        try clearDatabase(configuration, on: self.eventLoopGroup)
 
         try self.dbs.use(.mongo(connectionURL: configuration.connectionURL), as: .mongo)
     }
@@ -91,6 +88,18 @@ final class FluentMongoTests: XCTestCase {
 
 func env(_ name: String) -> String? {
     return ProcessInfo.processInfo.environment[name]
+}
+
+func clearDatabase(_ configuration: MongoConfiguration, on eventLoopGroup: EventLoopGroup) throws {
+
+    let client = try MongoClient(configuration.connectionURL.absoluteString, using: eventLoopGroup)
+
+    try client
+        .db(configuration.database)
+        .drop()
+        .wait()
+
+    try client.syncClose()
 }
 
 let isLoggingConfigured: Bool = {
