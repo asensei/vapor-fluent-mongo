@@ -166,23 +166,22 @@ extension MongoQueryConverter {
     }
 */
 
-    private func match() throws -> Document? {
+    private func match(aggregate: Bool) throws -> Document? {
 
         guard !self.query.filters.isEmpty else {
             return nil
         }
 
-        return try self.query.filters.reduce(into: Document()) { document, filter in
+        let filter = try self.query.filters.reduce(into: Document()) { document, filter in
 
             // Build
             switch filter {
             case .value(let field, let method, let value):
 //                #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-//                let pathWithNamespace = try field.field()/*pathWithNamespace*/.path.joined(separator: ".")
-//                let op = self.operator(from: method)
-//                let value = try self.bsonValue(value)
-//                document[pathWithNamespace] = [op: value] as Document
-                fatalError()
+                let key = try field.mongoKeyPath(namespace: aggregate)
+                let mongoOperator = try method.mongoOperator()
+                let bsonValue = try value.mongoValue(encoder: self.encoder)
+                document[key] = [mongoOperator: bsonValue]
             case .field(let lhs, let method, let rhs):
                 fatalError()
             case .group(let filters, let relation):
@@ -192,19 +191,20 @@ extension MongoQueryConverter {
             default:
                 break
             }
-
-            // Apply
-            /*
-            let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.collection)
-
-            switch query.filter {
-            case .some(let document):
-                query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
-            case .none:
-                query.filter = filterByRemovingRootNamespace
-            }
-             */
         }
+
+        //        // Apply
+        //
+        //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
+        //
+        //        switch query.filters {
+        //        case .some(let document):
+        //            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
+        //        case .none:
+        //            return filterByRemovingRootNamespace
+        //        }
+
+        return filter
     }
 
     private func projection() -> Document? {
@@ -219,7 +219,7 @@ extension MongoQueryConverter {
                 let path = self.query.schema == schema
                     ? value
                     : ([.string(schema)] + value)
-                key = path.mongoKey
+                key = path.mongoKeys.dotNotation
             case .custom(let value as String):
                 key = value
             default:
@@ -331,7 +331,7 @@ extension MongoQueryConverter {
         // TODO: re-enable all the stages
         //let joins = try self.joins()
         //appendStages(joins)
-        appendStage("$match", try self.match())
+        appendStage("$match", try self.match(aggregate: false))
         appendStage("$project", self.projection())
         //appendStages(self.distinct())
         //appendStage("$sort", self.sort())

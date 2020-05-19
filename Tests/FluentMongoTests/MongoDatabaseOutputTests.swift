@@ -107,7 +107,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
 
         let elements: [FieldKey] = [.id, .aggregate, .string("a"), "b"]
 
-        XCTAssertEqual(elements.mongoKey, "_id.aggregate.a.b")
+        XCTAssertEqual(elements.mongoKeys.dotNotation, "_id.aggregate.a.b")
     }
 }
 

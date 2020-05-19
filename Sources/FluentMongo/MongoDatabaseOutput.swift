@@ -35,34 +35,14 @@ private struct MongoDatabaseOutput: DatabaseOutput {
 
     func decode<T: Decodable>(_ path: [FieldKey], as type: T.Type) throws -> T {
 
-        let value = self.document[path.mongoKeys] ?? .null
-        let document: Document = ["value": value]
+        switch path.count {
+        case 1:
+            return try self.decoder.decode(type, from: self.document, forKey: path.mongoKeys.dotNotation)
+        default:
+            let value = self.document[path.mongoKeys] ?? .null
+            let document: Document = ["value": value]
 
-        return try self.decoder.decode(type, from: document, forKey: "value")
-    }
-}
-
-extension FieldKey {
-
-    var mongoKey: String {
-        switch self {
-        case .id:
-            return "_id"
-        case .string(let value):
-            return value
-        case .aggregate:
-            return "aggregate"
+            return try self.decoder.decode(type, from: document, forKey: "value")
         }
-    }
-}
-
-extension Array where Element == FieldKey {
-
-    var mongoKey: String {
-        return self.map { $0.mongoKey }.joined(separator: ".")
-    }
-
-    var mongoKeys: [String] {
-        return self.map { $0.mongoKey }
     }
 }

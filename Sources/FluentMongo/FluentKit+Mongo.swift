@@ -1,5 +1,5 @@
 //
-//  DatabaseQuery+Mongo.swift
+//  FluentKit+Mongo.swift
 //  FluentMongo
 //
 //  Created by Valerio Mazzeo on 19/05/2020.
@@ -28,16 +28,16 @@ extension DatabaseQuery.Value {
         case .custom(let value as BSON):
             return value
         case .custom:
-            fatalError() // not supported
+            throw Error.unsupportedValue
         case .default:
-            fatalError()
+            throw Error.unsupportedValue
         }
     }
 }
 
 extension DatabaseQuery.Filter.Method {
 
-    var mongoOperator: String {
+    func mongoOperator() throws -> String {
         switch self {
         case .equality(let inverse):
             return inverse ? "$ne" : "$eq"
@@ -56,12 +56,67 @@ extension DatabaseQuery.Filter.Method {
             return inverse ? "$nin" : "$in"
         case .contains(let inverse, let location):
             #warning("TODO: implement this")
-            fatalError()
+            throw Error.unsupportedOperator
         case .custom(let value as String):
             return value
         default:
             #warning("TODO: implement this")
-            fatalError() // not supported
+            throw Error.unsupportedOperator
         }
+    }
+}
+
+extension DatabaseQuery.Field {
+
+    func mongoKeyPath(namespace: Bool = false) throws -> String {
+        switch self {
+        case .path(let value, let schema) where namespace:
+            return ([schema] + value.mongoKeys).dotNotation
+        case .path(let value, _):
+            return value.mongoKeys.dotNotation
+        case .custom(let value as String):
+            return value
+        case .custom:
+            throw Error.unsupportedField
+        }
+    }
+
+    func mongoNamespacedKeyPath() throws -> String {
+        switch self {
+        case .path(let value, _):
+            return value.mongoKeys.dotNotation
+        case .custom(let value as String):
+            return value
+        case .custom:
+            throw Error.unsupportedField
+        }
+    }
+}
+
+extension FieldKey {
+
+    var mongoKey: String {
+        switch self {
+        case .id:
+            return "_id"
+        case .string(let value):
+            return value
+        case .aggregate:
+            return "aggregate"
+        }
+    }
+}
+
+extension Array where Element == FieldKey {
+
+    var mongoKeys: [String] {
+        return self.map { $0.mongoKey }
+    }
+}
+
+extension Array where Element == String {
+
+    var dotNotation: String {
+        return self.joined(separator: ".")
     }
 }

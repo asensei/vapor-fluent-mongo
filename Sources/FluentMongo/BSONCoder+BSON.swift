@@ -12,10 +12,22 @@ import MongoSwift
 extension BSONEncoder {
 
     public func encode(_ value: Encodable) throws -> BSON {
-        let wrappedData = ["value": AnyEncodable(value)]
-        let document: Document = try self.encode(wrappedData)
 
-        return document["value"] ?? .null
+        let wrappedDataKey = "value"
+        let document: Document
+
+        switch value {
+        case let value as Data:
+            document = try self.encode([wrappedDataKey: value])
+        case let value as Date:
+            document = try self.encode([wrappedDataKey: value])
+        case let value as UUID:
+            document = try self.encode([wrappedDataKey: value])
+        default:
+            document = try self.encode([wrappedDataKey: AnyEncodable(value)])
+        }
+
+        return document[wrappedDataKey] ?? .null
     }
 }
 
