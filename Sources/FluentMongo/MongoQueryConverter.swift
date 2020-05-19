@@ -64,13 +64,7 @@ extension MongoQueryConverter {
             return eventLoop.makeFailedFuture(error)
         }
 
-//        let cursor = try collection.aggregate(query.aggregationPipeline(), options: query.aggregateOptions)
-//        cursor.forEach { document in
-//            let callback = self.eventLoop.submit {
-//                try handler(document)
-//            }
-//            callbacks.append(callback)
-//        }
+//        TODO: Check this
 //        // Running `count` in an aggregation pipeline produce a `nil` document when the provided filter does not match any. Therefore we have to manually set the count to `0`.
 //        if let aggregate = query.keys.computed.first?.aggregate, callbacks.count == 0 {
 //            var callback: EventLoopFuture<Void>?
@@ -86,8 +80,6 @@ extension MongoQueryConverter {
 //            }
 //            callback.map { callbacks.append($0) }
 //        }
-
-        return eventLoop.makeSucceededFuture([])
     }
 
     private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
@@ -114,18 +106,29 @@ extension MongoQueryConverter {
     }
 
     private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        #warning("TODO: implement this")
+
+//        switch (query.data, query.partialData != nil || query.partialCustomData != nil) {
+//        case (.none, true):
+//            var document = query.partialCustomData ?? Document()
+//            document["$set"] = query.partialData.map { .document($0) }
+//            if let result = try collection.updateMany(filter: self.filter(query, collection), update: document) {
+//                self.logger?.record(query: String(describing: result))
+//            }
+//        case (.some(let data), false):
+//            if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: data) {
+//                self.logger?.record(query: String(describing: result))
+//            }
+//        default:
+//            throw Error.invalidQuery(query)
+//        }
+
         return eventLoop.makeSucceededFuture([])
     }
 
     private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        let collection = database.collection(self.query.schema)
-//        let filter = try self.filter(database)
-//        if let result = try collection.deleteMany(filter) {
-//            #warning("TODO: Log")
-//        }
-
-        return eventLoop.makeSucceededFuture([])
+        return self.filter(database, on: eventLoop).flatMap { filter in
+            database.collection(self.query.schema).deleteMany(filter).transform(to: [])
+        }
     }
 
     private func custom(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
