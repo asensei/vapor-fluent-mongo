@@ -92,7 +92,7 @@ extension MongoQueryConverter {
 
     private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
-            let documents = try self.query.input.compactMap { try self.bson($0).documentValue }
+            let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
             let collection = database.collection(self.query.schema)
 
             return collection.insertMany(documents).flatMapThrowing { result in
@@ -131,60 +131,6 @@ extension MongoQueryConverter {
     private func custom(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         #warning("TODO: implement this")
         return eventLoop.makeSucceededFuture([])
-    }
-}
-
-extension MongoQueryConverter {
-
-    private func bson(_ value: DatabaseQuery.Value) throws -> BSON {
-        switch value {
-        case .bind(let encodable):
-            return try self.encoder.encode(encodable)
-        case .null:
-            return .null
-        case .array(let values):
-            return try .array(values.map { try self.bson($0) })
-        case .dictionary(let dict):
-            return try .document(dict.reduce(into: Document()) { result, element in
-                result[element.key.mongoKey] = try self.bson(element.value)
-            })
-        case .enumCase(let value):
-            return .string(value)
-        case .custom(let value as BSON):
-            return value
-        case .custom:
-            fatalError() // not supported
-        case .default:
-            fatalError()
-        }
-    }
-
-    private func `operator`(from method: DatabaseQuery.Filter.Method) -> String {
-        switch method {
-        case .equality(let inverse):
-            return inverse ? "$ne" : "$eq"
-        case .order(let inverse, let equality):
-            switch (inverse, equality) {
-            case (true, true):
-                return "$lte"
-            case (true, false):
-                return "$lt"
-            case (false, true):
-                return "$gte"
-            case (false, false):
-                return "$gt"
-            }
-        case .subset(let inverse):
-            return inverse ? "$nin" : "$in"
-        case .contains(let inverse, let location):
-            #warning("TODO: implement this")
-            fatalError()
-        case .custom(let value as String):
-            return value
-        default:
-            #warning("TODO: implement this")
-            fatalError() // not supported
-        }
     }
 }
 
