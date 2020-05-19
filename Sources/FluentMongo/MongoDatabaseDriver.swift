@@ -76,6 +76,12 @@ struct ConnectionPoolMongoDatabase: MongoDatabase {
         }
     }
 
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.withConnection {
+            $0.execute(closure)
+        }
+    }
+
     func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.pool.withConnection(logger: self.logger, closure)
     }

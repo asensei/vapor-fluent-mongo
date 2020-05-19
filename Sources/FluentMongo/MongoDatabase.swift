@@ -18,6 +18,8 @@ protocol MongoDatabase {
 
     func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
 
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+
     func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
@@ -51,7 +53,9 @@ struct FluentMongoDatabase: Database {
     }
 
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
-        return self.eventLoop.makeSucceededFuture(Void())
+        return self.database.withConnection { connection in
+            return connection.execute(MongoSchemaConverter(schema).convert)
+        }
     }
 
     func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {

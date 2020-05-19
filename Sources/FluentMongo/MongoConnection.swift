@@ -100,6 +100,10 @@ final class MongoConnection: ConnectionPoolItem, MongoDatabase {
         }
     }
 
+    public func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        return closure(self.client.db(self.database), self.eventLoop)
+    }
+
     public func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         closure(self)
     }

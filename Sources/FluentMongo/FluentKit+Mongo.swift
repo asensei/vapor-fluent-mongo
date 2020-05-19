@@ -120,3 +120,36 @@ extension Array where Element == String {
         return self.joined(separator: ".")
     }
 }
+
+extension DatabaseSchema.DataType {
+
+    var mongoType: String? {
+        switch self {
+        case .bool:
+            return "bool"
+        case .json:
+            return "object"
+        case .int8, .int16, .int32, .uint8, .uint16, .uint32:
+            return "int"
+        case .int64, .uint64:
+            return "long"
+        case .enum(let value):
+            #warning("TODO: https://github.com/vapor/fluent-kit/pull/90")
+            return "string"
+        case .string:
+            return "string"
+        case .time, .date, .datetime:
+            return "date"
+        case .float, .double:
+            return "double"
+        case .data:
+            return "binData"
+        case .uuid:
+            return "binData"
+        case .custom(_):
+            return nil
+        case .array(_):
+            return nil
+        }
+    }
+}

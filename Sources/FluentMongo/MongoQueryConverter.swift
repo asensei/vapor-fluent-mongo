@@ -122,7 +122,20 @@ extension MongoQueryConverter {
 //            throw Error.invalidQuery(query)
 //        }
 
-        return eventLoop.makeSucceededFuture([])
+        do {
+            let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
+
+            return self.filter(database, on: eventLoop).flatMap { filter in
+                let collection = database.collection(self.query.schema)
+                let updates = documents.map { document in
+                    collection.updateMany(filter: filter, update: ["$set": .document(document)])
+                }.flatten(on: eventLoop)
+
+                return updates.transform(to: [])
+            }
+        } catch {
+            return eventLoop.makeFailedFuture(error)
+        }
     }
 
     private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
