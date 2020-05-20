@@ -12,11 +12,14 @@ import MongoSwift
 
 struct MongoSchemaConverter {
 
-    public init(_ schema: DatabaseSchema) {
+    public init(_ schema: DatabaseSchema, customPropertySchemaGenerator: MongoCustomPropertySchemaGenerator? = nil) {
         self.schema = schema
+        self.customPropertySchemaGenerator = customPropertySchemaGenerator
     }
 
     private let schema: DatabaseSchema
+
+    private let customPropertySchemaGenerator: MongoCustomPropertySchemaGenerator?
 
     public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
         switch self.schema.action {
@@ -27,22 +30,6 @@ struct MongoSchemaConverter {
         case .delete:
             return self.delete(database, on: eventLoop)
         }
-    }
-}
-
-extension MongoSchemaConverter {
-
-//    private func create(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-//        return database.createCollection(self.schema.schema).transform(to: Void())
-//    }
-
-    private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-        #warning("TODO: Ask Tanner. Nothing seem to be calling update. It's not clear how is supposed to work.")
-        return eventLoop.makeSucceededFuture(Void())
-    }
-
-    private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-        return database.collection(self.schema.schema).drop()
     }
 }
 
@@ -65,27 +52,19 @@ extension MongoSchemaConverter {
         ])
 
         return database.createCollection(self.schema.schema, options: options).transform(to: Void())
-
-        //        let system = database.collection("system.js")
-        //        let r = try system.insertOne([
-        //            "_id": "getNextSequence",
-        //            "value":
-        //            """
-        //            function getNextSequence(name) {
-        //               var ret = db.counters.findAndModify(
-        //                      {
-        //                        query: { _id: name },
-        //                        update: { $inc: { seq: 1 } },
-        //                        new: true
-        //                      }
-        //               );
-        //
-        //               return ret.seq;
-        //            }
-        //            """
-        //        ])
-        //        print(r)
     }
+
+    private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+        #warning("TODO: Ask Tanner. Nothing seem to be calling update. It's not clear how is supposed to work.")
+        return eventLoop.makeSucceededFuture(Void())
+    }
+
+    private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+        return database.collection(self.schema.schema).drop()
+    }
+}
+
+extension MongoSchemaConverter {
 
     private func required() -> BSON? {
 
@@ -121,8 +100,14 @@ extension MongoSchemaConverter {
                 properties[key.mongoKey] = .document(document)
 
             case .custom(let value):
-                #warning("TODO: implement this")
-                continue
+
+                guard let customProperty = self.customPropertySchemaGenerator?.propertySchema(for: value) else {
+
+                    fatalError("Unhandled custom property type in schema")
+                    continue
+                }
+
+                properties[customProperty.key.mongoKey] = .document(customProperty.schema)
             }
         }
 
@@ -136,4 +121,18 @@ extension MongoSchemaConverter {
             return .document(document)
         }()
     }
+}
+
+public protocol MongoCustomPropertySchemaGenerator {
+
+    func propertySchema(for customField: Any) -> MongoCustomPropertySchema?
+}
+
+public struct MongoCustomPropertySchema {
+
+    /// The key for the respective property.
+    public let key: FieldKey
+
+    /// A `Schema Document` for the respective property. https://docs.mongodb.com/stitch/mongodb/document-schemas/
+    public let schema: Document
 }
