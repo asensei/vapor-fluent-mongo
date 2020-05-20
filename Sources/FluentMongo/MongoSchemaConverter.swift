@@ -39,11 +39,11 @@ extension MongoSchemaConverter {
 
         var jsonSchema: Document = ["bsonType": "object"]
 
-        if let required = self.required() {
+        if let required = self.required(fields: self.schema.createFields) {
             jsonSchema.required = required
         }
 
-        if let properties = self.properties() {
+        if let properties = self.properties(fields: self.schema.createFields) {
             jsonSchema.properties = properties
         }
 
@@ -66,12 +66,21 @@ extension MongoSchemaConverter {
 
 extension MongoSchemaConverter {
 
-    private func required() -> BSON? {
+    private func required(fields: [DatabaseSchema.FieldDefinition]) -> BSON? {
 
-        let result: [String] = self.schema.createFields.compactMap { field in
-            guard case .definition(let fieldName, _, _) = field else {
+        let result: [String] = fields.compactMap { field in
+
+            guard
+                case .definition(let fieldName, _, let constraints) = field,
+                constraints.contains(where: {
+                    guard case DatabaseSchema.FieldConstraint.required = $0 else {
+                        return false
+                    }
+                    return true
+                }) else {
                 return nil
             }
+
             guard case .key(let key) = fieldName else {
                 return nil
             }
@@ -82,11 +91,11 @@ extension MongoSchemaConverter {
         return result.isEmpty ? nil : .array(result.map { .string($0) })
     }
 
-    private func properties() -> BSON? {
+    private func properties(fields: [DatabaseSchema.FieldDefinition]) -> BSON? {
 
         var properties: [String: BSON] = [:]
 
-        for field in self.schema.createFields {
+        for field in fields {
             switch field {
             case .definition(let fieldName, let dataType, _):
 
@@ -94,8 +103,11 @@ extension MongoSchemaConverter {
                     continue
                 }
 
-                let document: Document = ["bsonType": .string(bsonType)]
-                // TODO: Need to make sure that we don't need to add more customisation to the schema document in here: https://docs.mongodb.com/stitch/mongodb/document-schemas/#schema-data-types
+                var document: Document = ["bsonType": .string(bsonType)]
+
+                if case let DatabaseSchema.DataType.enum(value) = dataType {
+                    document.enum = .array(value.cases.map { .string($0) })
+                }
 
                 properties[key.mongoKey] = .document(document)
 
