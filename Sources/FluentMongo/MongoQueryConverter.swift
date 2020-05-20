@@ -203,27 +203,16 @@ extension MongoQueryConverter {
             return nil
         }
 
-        let filter = try self.query.filters.reduce(into: Document()) { document, filter in
-
-            // Build
-            switch filter {
-            case .value(let field, let method, let value):
-//                #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-                let key = try field.mongoKeyPath(namespace: aggregate)
-                let mongoOperator = try method.mongoOperator()
-                let bsonValue = try value.mongoValue(encoder: self.encoder)
-                document[key] = [mongoOperator: bsonValue]
-            case .field(let lhs, let method, let rhs):
-                fatalError()
-            case .group(let filters, let relation):
-                fatalError()
-            case .custom(let document as Document):
-                fatalError()
-            default:
-                break
-            }
+        let filters = try self.query.filters.map { filter in
+            try filter.mongoFilter(aggregate: false, mainSchema: self.query.schema, encoder: self.encoder)
         }
 
+        switch filters.count {
+        case 1:
+            return filters.first
+        default:
+            return try DatabaseQuery.Filter.Relation.and.mongoGroup(filters: filters)
+        }
         //        // Apply
         //
         //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
@@ -234,8 +223,6 @@ extension MongoQueryConverter {
         //        case .none:
         //            return filterByRemovingRootNamespace
         //        }
-
-        return filter
     }
 
     private func projection() -> Document? {
@@ -369,19 +356,6 @@ extension MongoQueryConverter {
         //appendStage("$skip", self.skip())
         //appendStage("$limit", self.limit())
         //appendStages(self.aggregates())
-
-        // Remove joined collections from the output
-
-//        if !joins.isEmpty {
-//            var projection = Document()
-//            for join in joins {
-//                guard let field = join["$lookup", "as"]?.stringValue else {
-//                    continue
-//                }
-//                projection[field] = false
-//            }
-//            appendStage("$project", projection)
-//        }
 
         return pipeline
     }
