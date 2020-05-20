@@ -66,6 +66,91 @@ extension DatabaseQuery.Filter.Method {
     }
 }
 
+extension DatabaseQuery.Join.Method: Equatable {
+
+    public enum Mongo {
+        case outer
+    }
+
+    public static var outer: DatabaseQuery.Join.Method {
+        return .custom(Mongo.outer)
+    }
+
+    private var isOuter: Bool {
+        switch self {
+        case .custom(let value as Mongo):
+            switch value {
+            case .outer:
+                return true
+            }
+        default:
+            return false
+        }
+    }
+
+    public static func ==(lhs: DatabaseQuery.Join.Method, rhs: DatabaseQuery.Join.Method) -> Bool {
+        switch (lhs, rhs) {
+        case (.left, .left):
+            return true
+        case (.inner, .inner):
+            return true
+        case (.outer, .outer):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension DatabaseQuery.Filter {
+
+    func mongoFilter(aggregate: Bool, mainSchema: String, encoder: BSONEncoder) throws -> Document {
+        switch self {
+        case .value(let field, let method, let value):
+            // #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
+            let key = try field.mongoKeyPath(namespace: aggregate)
+            let mongoOperator = try method.mongoOperator()
+            let bsonValue = try value.mongoValue(encoder: encoder)
+
+            return [key: [mongoOperator: bsonValue]]
+        case .field(let lhs, let method, let rhs):
+            let lhsKey: BSON = try .string("$" + lhs.mongoKeyPath(namespace: lhs.schema != mainSchema))
+            let rhsKey: BSON = try .string("$" + rhs.mongoKeyPath(namespace: rhs.schema != mainSchema))
+            let mongoOperator = try method.mongoOperator()
+
+            return ["$expr": [mongoOperator: .array([lhsKey, rhsKey])]]
+        case .group(let filters, let relation):
+            let filters = try filters.map { try $0.mongoFilter(aggregate: aggregate, mainSchema: mainSchema, encoder: encoder) }
+
+            return try relation.mongoGroup(filters: filters)
+        case .custom(let document as Document):
+            return document
+        case .custom:
+            fatalError()
+        }
+    }
+}
+
+extension DatabaseQuery.Filter.Relation {
+
+    func mongoOperator() throws -> String {
+        switch self {
+        case .and:
+            return "$and"
+        case .or:
+            return "$or"
+        case .custom(let value as String):
+            return value
+        case .custom:
+            throw Error.unsupportedFilterRelation
+        }
+    }
+
+    func mongoGroup(filters: [Document]) throws -> Document {
+        return [try self.mongoOperator(): .array(filters.map { .document($0) })]
+    }
+}
+
 extension DatabaseQuery.Field {
 
     func mongoKeyPath(namespace: Bool = false) throws -> String {
@@ -81,14 +166,12 @@ extension DatabaseQuery.Field {
         }
     }
 
-    func mongoNamespacedKeyPath() throws -> String {
+    var schema: String? {
         switch self {
-        case .path(let value, _):
-            return value.mongoKeys.dotNotation
-        case .custom(let value as String):
-            return value
-        case .custom:
-            throw Error.unsupportedField
+        case .path(_, let schema):
+            return schema
+        default:
+            return nil
         }
     }
 }

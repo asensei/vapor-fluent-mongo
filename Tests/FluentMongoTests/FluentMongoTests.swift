@@ -58,17 +58,17 @@ final class FluentMongoTests: XCTestCase {
 
 //    func testAll() throws { try self.benchmarker.testAll() }
 //    func testAggregate() throws { try self.benchmarker.testAggregate() }
-//    func testArray() throws { try self.benchmarker.testArray() }
+    func testArray() throws { try self.benchmarker.testArray() }
 //    func testBatch() throws { try self.benchmarker.testBatch() }
 //    func testChildren() throws { try self.benchmarker.testChildren() }
 //    func testChunk() throws { try self.benchmarker.testChunk() }
     func testCRUD() throws { try self.benchmarker.testCRUD() }
 //    func testEagerLoad() throws { try self.benchmarker.testEagerLoad() }
 //    func testEnum() throws { try self.benchmarker.testEnum() }
-//    func testFilter() throws { try self.benchmarker.testFilter(sql: false) }
-//    func testGroup() throws { try self.benchmarker.testGroup() }
+    func testFilter() throws { try self.benchmarker.testFilter(sql: false) }
+    func testGroup() throws { try self.benchmarker.testGroup() }
     func testID() throws { try self.benchmarker.testID(autoincrement: false, custom: false) }
-//    func testJoin() throws { try self.benchmarker.testJoin() }
+    func testJoin() throws { try self.benchmarker.testJoin() }
 //    func testMiddleware() throws { try self.benchmarker.testMiddleware() }
 //    func testMigrator() throws { try self.benchmarker.testMigrator() }
 //    func testModel() throws { try self.benchmarker.testModel() }

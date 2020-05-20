@@ -26,7 +26,21 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     }
 
     func schema(_ schema: String) -> DatabaseOutput {
-        MongoDatabaseOutput(document: self.document, decoder: self.decoder, schema: schema)
+
+        let document: Document
+
+        switch (self.schema, schema) {
+        case (.some(let lhs), let rhs):
+            if lhs == rhs {
+                document = self.document
+            } else {
+                document = self.document[schema]?.documentValue ?? Document()
+            }
+        case (.none, _):
+            document = self.document
+        }
+
+        return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema)
     }
 
     func contains(_ path: [FieldKey]) -> Bool {

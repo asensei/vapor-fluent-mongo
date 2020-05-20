@@ -37,9 +37,9 @@ struct MongoQueryConverter {
             future = self.update(database, on: eventLoop)
         case .delete:
             future = self.delete(database, on: eventLoop)
-        case .aggregate(_):
-            fatalError()
-        case .custom(let any):
+        case .aggregate(let value):
+            future = self.aggregate(value, database, on: eventLoop)
+        case .custom(_):
             fatalError()
             //future custom(any)
         }
@@ -144,6 +144,11 @@ extension MongoQueryConverter {
         }
     }
 
+    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        #warning("TODO: implement this")
+        return eventLoop.makeSucceededFuture([])
+    }
+
     private func custom(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         #warning("TODO: implement this")
         return eventLoop.makeSucceededFuture([])
@@ -151,36 +156,46 @@ extension MongoQueryConverter {
 }
 
 extension MongoQueryConverter {
-/*
+
     private func joins() throws -> [Document] {
-        return try self.query.joins.map { join in
+        return try self.query.joins.flatMap { join -> [Document] in
+
             switch join {
-            case .join(let schema, let foreign, let local, let method):
-                let collection = try schema.schema().name
+            case .join(let schema, let alias, let method, let foreign, let local):
+
                 let lookup: Document = [
                     "$lookup": [
-                        "from": collection,
-                        "localField": try local.field().path.joined(separator: "."),
-                        "foreignField": try foreign.field().path.joined(separator: "."),
-                        "as": collection
-                    ] as Document
+                        "from": .string(schema),
+                        "localField": .string(try local.mongoKeyPath()),
+                        "foreignField": .string(try foreign.mongoKeyPath()),
+                        "as": .string(alias ?? schema)
+                    ]
                 ]
 
-                let unwind: Document = [
-                    "$unwind": [
-                        "path": "$" + collection,
-                        "preserveNullAndEmptyArrays": method.isOuter
-                    ] as Document
-                ]
+                func unwind(preserveNullAndEmptyArrays: Bool) -> Document {
+                    return [
+                        "$unwind": [
+                            "path": .string("$" + (alias ?? schema)),
+                            "preserveNullAndEmptyArrays": .bool(preserveNullAndEmptyArrays)
+                        ]
+                    ]
+                }
 
-                return [lookup, unwind]
-
-            case .custom(let value):
-                fatalError()
+                switch method {
+                case .left:
+                    return [lookup]
+                case .inner:
+                    return [lookup, unwind(preserveNullAndEmptyArrays: false)]
+                case .outer:
+                    return [lookup, unwind(preserveNullAndEmptyArrays: true)]
+                default:
+                    throw Error.unsupportedJoinMethod
+                }
+            case .custom:
+                throw Error.unsupportedJoin
             }
         }
     }
-*/
 
     private func match(aggregate: Bool) throws -> Document? {
 
@@ -188,27 +203,16 @@ extension MongoQueryConverter {
             return nil
         }
 
-        let filter = try self.query.filters.reduce(into: Document()) { document, filter in
-
-            // Build
-            switch filter {
-            case .value(let field, let method, let value):
-//                #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-                let key = try field.mongoKeyPath(namespace: aggregate)
-                let mongoOperator = try method.mongoOperator()
-                let bsonValue = try value.mongoValue(encoder: self.encoder)
-                document[key] = [mongoOperator: bsonValue]
-            case .field(let lhs, let method, let rhs):
-                fatalError()
-            case .group(let filters, let relation):
-                fatalError()
-            case .custom(let document as Document):
-                fatalError()
-            default:
-                break
-            }
+        let filters = try self.query.filters.map { filter in
+            try filter.mongoFilter(aggregate: false, mainSchema: self.query.schema, encoder: self.encoder)
         }
 
+        switch filters.count {
+        case 1:
+            return filters.first
+        default:
+            return try DatabaseQuery.Filter.Relation.and.mongoGroup(filters: filters)
+        }
         //        // Apply
         //
         //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
@@ -219,8 +223,6 @@ extension MongoQueryConverter {
         //        case .none:
         //            return filterByRemovingRootNamespace
         //        }
-
-        return filter
     }
 
     private func projection() -> Document? {
@@ -345,8 +347,8 @@ extension MongoQueryConverter {
         }
 
         // TODO: re-enable all the stages
-        //let joins = try self.joins()
-        //appendStages(joins)
+        let joins = try self.joins()
+        appendStages(joins)
         appendStage("$match", try self.match(aggregate: false))
         appendStage("$project", self.projection())
         //appendStages(self.distinct())
@@ -355,19 +357,6 @@ extension MongoQueryConverter {
         //appendStage("$limit", self.limit())
         //appendStages(self.aggregates())
 
-        // Remove joined collections from the output
-/*
-        if !joins.isEmpty {
-            var projection = Document()
-            for join in joins {
-                guard let field = join["$lookup", "as"] as? String else {
-                    continue
-                }
-                projection[field] = false
-            }
-            appendStage("$project", projection)
-        }
-*/
         return pipeline
     }
 
