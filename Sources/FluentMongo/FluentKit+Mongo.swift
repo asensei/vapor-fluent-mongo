@@ -66,23 +66,48 @@ extension DatabaseQuery.Filter.Method {
     }
 }
 
+extension DatabaseQuery.Join.Method: Equatable {
+
+    public enum Mongo {
+        case outer
+    }
+
+    public static var outer: DatabaseQuery.Join.Method {
+        return .custom(Mongo.outer)
+    }
+
+    private var isOuter: Bool {
+        switch self {
+        case .custom(let value as Mongo):
+            switch value {
+            case .outer:
+                return true
+            }
+        default:
+            return false
+        }
+    }
+
+    public static func ==(lhs: DatabaseQuery.Join.Method, rhs: DatabaseQuery.Join.Method) -> Bool {
+        switch (lhs, rhs) {
+        case (.left, .left):
+            return true
+        case (.inner, .inner):
+            return true
+        case (.outer, .outer):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 extension DatabaseQuery.Field {
 
     func mongoKeyPath(namespace: Bool = false) throws -> String {
         switch self {
         case .path(let value, let schema) where namespace:
             return ([schema] + value.mongoKeys).dotNotation
-        case .path(let value, _):
-            return value.mongoKeys.dotNotation
-        case .custom(let value as String):
-            return value
-        case .custom:
-            throw Error.unsupportedField
-        }
-    }
-
-    func mongoNamespacedKeyPath() throws -> String {
-        switch self {
         case .path(let value, _):
             return value.mongoKeys.dotNotation
         case .custom(let value as String):
