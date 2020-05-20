@@ -79,7 +79,7 @@ extension MongoSchemaConverter {
             return key.mongoKey
         }
 
-        return result.isEmpty ? nil : .array(result.map { BSON.init(stringLiteral: $0) })
+        return result.isEmpty ? nil : .array(result.map { .string($0) })
     }
 
     private func properties() -> BSON? {
