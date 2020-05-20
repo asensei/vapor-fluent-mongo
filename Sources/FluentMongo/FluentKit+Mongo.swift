@@ -229,10 +229,12 @@ extension DatabaseSchema.DataType {
             return "binData"
         case .uuid:
             return "binData"
-        case .custom(_):
+        case .custom(let value as String):
+            return value
+        case .custom:
             return nil
         case .array(_):
-            return nil
+            return "array"
         }
     }
 }

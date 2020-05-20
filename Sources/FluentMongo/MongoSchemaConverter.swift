@@ -12,11 +12,14 @@ import MongoSwift
 
 struct MongoSchemaConverter {
 
-    public init(_ schema: DatabaseSchema) {
+    public init(_ schema: DatabaseSchema, customPropertySchemaGenerator: MongoCustomPropertySchemaGenerator? = nil) {
         self.schema = schema
+        self.customPropertySchemaGenerator = customPropertySchemaGenerator
     }
 
     private let schema: DatabaseSchema
+
+    private let customPropertySchemaGenerator: MongoCustomPropertySchemaGenerator?
 
     public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
         switch self.schema.action {
@@ -33,7 +36,22 @@ struct MongoSchemaConverter {
 extension MongoSchemaConverter {
 
     private func create(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-        return database.createCollection(self.schema.schema).transform(to: Void())
+
+        var jsonSchema: Document = ["bsonType": "object"]
+
+        if let required = self.required() {
+            jsonSchema.required = required
+        }
+
+        if let properties = self.properties() {
+            jsonSchema.properties = properties
+        }
+
+        let options = CreateCollectionOptions(validator: [
+            "$jsonSchema": .document(jsonSchema)
+        ])
+
+        return database.createCollection(self.schema.schema, options: options).transform(to: Void())
     }
 
     private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
@@ -46,84 +64,75 @@ extension MongoSchemaConverter {
     }
 }
 
-/* TODO: implement schema constraints
 extension MongoSchemaConverter {
 
-        private func create(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+    private func required() -> BSON? {
 
-            var jsonSchema: Document = ["bsonType": "object"]
-
-            if let required = self.required() {
-                jsonSchema["required"] = required
-            }
-
-            if let properties = self.properties() {
-                jsonSchema["properties"] = properties
-            }
-
-            let options = CreateCollectionOptions(validator: [
-                "$jsonSchema": jsonSchema
-            ])
-
-            _ = try database.createCollection(self.schema.schema, options: options)
-
-    //        let system = database.collection("system.js")
-    //        let r = try system.insertOne([
-    //            "_id": "getNextSequence",
-    //            "value":
-    //            """
-    //            function getNextSequence(name) {
-    //               var ret = db.counters.findAndModify(
-    //                      {
-    //                        query: { _id: name },
-    //                        update: { $inc: { seq: 1 } },
-    //                        new: true
-    //                      }
-    //               );
-    //
-    //               return ret.seq;
-    //            }
-    //            """
-    //        ])
-    //        print(r)
-        }
-
-    private func required() -> [String]? {
         let result: [String] = self.schema.createFields.compactMap { field in
             guard case .definition(let fieldName, _, _) = field else {
                 return nil
             }
-            guard case .string(let name) = fieldName else {
+            guard case .key(let key) = fieldName else {
                 return nil
             }
 
-            return name
+            return key.mongoKey
         }
 
-        return result.isEmpty ? nil : result
+        return result.isEmpty ? nil : .array(result.map { .string($0) })
     }
 
-    private func properties() -> Document? {
+    private func properties() -> BSON? {
 
-        var document = Document()
+        var properties: [String: BSON] = [:]
 
         for field in self.schema.createFields {
             switch field {
             case .definition(let fieldName, let dataType, _):
 
-                guard case .string(let name) = fieldName, let bsonType = self.bsonType(dataType) else {
+                guard case .key(let key) = fieldName, let bsonType = dataType.mongoType else {
                     continue
                 }
 
-                document[name] = ["bsonType": bsonType] as Document
+                let document: Document = ["bsonType": .string(bsonType)]
+                // TODO: Need to make sure that we don't need to add more customisation to the schema document in here: https://docs.mongodb.com/stitch/mongodb/document-schemas/#schema-data-types
+
+                properties[key.mongoKey] = .document(document)
 
             case .custom(let value):
-                #warning("TODO: implement this")
-                continue
+
+                guard let customProperty = self.customPropertySchemaGenerator?.propertySchema(for: value) else {
+
+                    fatalError("Unhandled custom property type in schema")
+                    continue
+                }
+
+                properties[customProperty.key.mongoKey] = .document(customProperty.schema)
             }
         }
-        
-        return document.isEmpty ? nil : document
+
+        return properties.isEmpty ? nil : {
+            var document = Document()
+
+            for property in properties {
+                document[property.key] = property.value
+            }
+
+            return .document(document)
+        }()
     }
 }
-*/
+
+public protocol MongoCustomPropertySchemaGenerator {
+
+    func propertySchema(for customField: Any) -> MongoCustomPropertySchema?
+}
+
+public struct MongoCustomPropertySchema {
+
+    /// The key for the respective property.
+    public let key: FieldKey
+
+    /// A `Schema Document` for the respective property. https://docs.mongodb.com/stitch/mongodb/document-schemas/
+    public let schema: Document
+}
