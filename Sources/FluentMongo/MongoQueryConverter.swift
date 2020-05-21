@@ -193,8 +193,8 @@ extension MongoQueryConverter {
         if self.query.isUnique {
             pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
         }
+        pipeline += try self.query.sorts.mongoSort(mainSchema: schema)
         // TODO: re-enable all the stages
-        //appendStage("$sort", self.sort())
         //appendStage("$skip", self.skip())
         //appendStage("$limit", self.limit())
         //appendStages(self.aggregates())

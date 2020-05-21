@@ -19,6 +19,8 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
     case unsupportedFilter
     case unsupportedFilterRelation
     case unsupportedQueryAction
+    case unsupportedSort
+    case unsupportedSortDirection
 
     public var description: String {
         switch self {
@@ -42,6 +44,10 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
             return "Unsupported filter relation"
         case .unsupportedQueryAction:
             return "Unsupported query action"
+        case .unsupportedSort:
+            return "Unsupported sort"
+        case .unsupportedSortDirection:
+            return "Unsupported sort direction"
         }
     }
 
