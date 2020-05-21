@@ -146,38 +146,13 @@ extension MongoQueryConverter {
     }
 
     private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        #warning("TODO: implement this")
+
         return eventLoop.makeSucceededFuture([])
     }
 
     private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         return database.runCommand(command).map { [$0.databaseOutput(using: self.decoder)] }
     }
-}
-
-extension MongoQueryConverter {
-
-/*
-    private func sort() -> Document? {
-        #warning("TODO: implement this")
-        return nil
-    }
-
-    private func skip() -> Document? {
-        #warning("TODO: implement this")
-        return nil
-    }
-
-    private func limit() -> Document? {
-        #warning("TODO: implement this")
-        return nil
-    }
-
-    private func aggregates() -> [Document]? {
-        #warning("TODO: implement this")
-        return nil
-    }
-*/
 }
 
 extension MongoQueryConverter {

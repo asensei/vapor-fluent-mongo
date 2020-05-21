@@ -73,11 +73,9 @@ extension DatabaseQuery.Join.Method: Equatable {
 
     public static func ==(lhs: DatabaseQuery.Join.Method, rhs: DatabaseQuery.Join.Method) -> Bool {
         switch (lhs, rhs) {
-        case (.left, .left):
-            return true
-        case (.inner, .inner):
-            return true
-        case (.outer, .outer):
+        case (.left, .left),
+             (.inner, .inner),
+             (.outer, .outer):
             return true
         default:
             return false

@@ -23,6 +23,7 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
     case unsupportedSortDirection
     case unsupportedOffset
     case unsupportedLimit
+    case unsupportedAggregateMethod
 
     public var description: String {
         switch self {
@@ -54,6 +55,8 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
             return "Unsupported offset"
         case .unsupportedLimit:
             return "Unsupported limit"
+        case .unsupportedAggregateMethod:
+            return "Unsupported aggregate method"
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  DatabaseQueryLimit+Mongo.swift
+//  DatabaseQueryOffset+Mongo.swift
 //  FluentMongo
 //
 //  Created by Valerio Mazzeo on 21/05/2020.
