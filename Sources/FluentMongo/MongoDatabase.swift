@@ -59,10 +59,22 @@ struct FluentMongoDatabase: Database {
     }
 
     func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
-        fatalError()
+        /**
+         Printing description of enum:
+         ▿ DatabaseEnum
+           - action : FluentKit.DatabaseEnum.Action.create
+           - name : "bar"
+           ▿ createCases : 2 elements
+             - 0 : "baz"
+             - 1 : "qux"
+           - deleteCases : 0 elements
+         */
+        // #warning("TODO: Dale check this needs to do anything in regards to the schema.")
+        self.eventLoop.makeSucceededFuture(Void())
     }
 
     func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        #warning("TODO: Support transactions")
         fatalError()
     }
 

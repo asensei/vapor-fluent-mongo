@@ -11,12 +11,40 @@ import FluentKit
 
 extension DatabaseQuery.Aggregate {
 
-    func mongoAggregate(encoder: BSONEncoder) throws -> BSON {
+    func mongoAggregate(mainSchema: String) throws -> [Document] {
         switch self {
         case .field(let field, let method):
-            fatalError()
+            switch method {
+            case .count:
+                return try [[method.mongoAggregationPipelineStage(): .string(FieldKey.aggregate.mongoKey)]]
+            default:
+                return try [[
+                    method.mongoAggregationPipelineStage(): .document([
+                        "_id": .null,
+                        FieldKey.aggregate.mongoKey: [
+                            method.mongoAccumulatorOperator(): .string("$" + field.mongoKeyPath(namespace: field.schema != mainSchema))
+                        ]
+                    ])
+                ]]
+            }
         case .custom:
-            fatalError()
+            throw Error.unsupportedAggregate
+        }
+    }
+
+    func mongoAggregationEmptyResult() throws -> Document {
+        switch self {
+        case .field(_, let method):
+            switch method {
+            case .count:
+                return [FieldKey.aggregate.mongoKey: 0]
+            case .sum, .average, .minimum, .maximum, .custom(is DatabaseQuery.Aggregate.Method.MongoAccumulatorOperator):
+                return [FieldKey.aggregate.mongoKey: .null]
+            case .custom:
+                throw Error.unsupportedAggregateMethod
+            }
+        case .custom:
+            throw Error.unsupportedAggregate
         }
     }
 }
@@ -25,8 +53,6 @@ extension DatabaseQuery.Aggregate.Method: Equatable {
 
     func mongoAccumulatorOperator() throws -> String {
         switch self {
-        case .count:
-            return "$count"
         case .sum:
             return "$sum"
         case .average:
@@ -39,6 +65,17 @@ extension DatabaseQuery.Aggregate.Method: Equatable {
             return value.rawValue
         case .custom(let value as String):
             return value
+        case .count, .custom:
+            throw Error.unsupportedAggregateMethod
+        }
+    }
+
+    func mongoAggregationPipelineStage() throws -> String {
+        switch self {
+        case .count:
+            return "$count"
+        case .sum, .average, .minimum, .maximum, .custom(is MongoAccumulatorOperator):
+            return "$group"
         case .custom:
             throw Error.unsupportedAggregateMethod
         }

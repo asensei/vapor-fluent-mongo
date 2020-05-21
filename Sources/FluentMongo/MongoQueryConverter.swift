@@ -64,23 +64,22 @@ extension MongoQueryConverter {
         } catch {
             return eventLoop.makeFailedFuture(error)
         }
+    }
 
-//        TODO: Check this
-//        // Running `count` in an aggregation pipeline produce a `nil` document when the provided filter does not match any. Therefore we have to manually set the count to `0`.
-//        if let aggregate = query.keys.computed.first?.aggregate, callbacks.count == 0 {
-//            var callback: EventLoopFuture<Void>?
-//            switch aggregate {
-//            case .count:
-//                callback = self.eventLoop.submit {
-//                    try handler([FluentMongoQuery.defaultAggregateField: 0])
-//                }
-//            case .group:
-//                callback = self.eventLoop.submit {
-//                    try handler([FluentMongoQuery.defaultAggregateField: .null])
-//                }
-//            }
-//            callback.map { callbacks.append($0) }
-//        }
+    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        let collection = database.collection(self.query.schema)
+
+        do {
+            let pipeline = try self.aggregationPipeline()
+
+            return collection.aggregate(pipeline, options: nil).flatMap { cursor in
+                cursor.toArray()
+                    .flatMapThrowing { $0.isEmpty ? [try aggregate.mongoAggregationEmptyResult()] : $0 }
+                    .mapEach { $0.databaseOutput(using: self.decoder) }
+            }
+        } catch {
+            return eventLoop.makeFailedFuture(error)
+        }
     }
 
     private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
@@ -107,22 +106,6 @@ extension MongoQueryConverter {
     }
 
     private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-
-//        switch (query.data, query.partialData != nil || query.partialCustomData != nil) {
-//        case (.none, true):
-//            var document = query.partialCustomData ?? Document()
-//            document["$set"] = query.partialData.map { .document($0) }
-//            if let result = try collection.updateMany(filter: self.filter(query, collection), update: document) {
-//                self.logger?.record(query: String(describing: result))
-//            }
-//        case (.some(let data), false):
-//            if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: data) {
-//                self.logger?.record(query: String(describing: result))
-//            }
-//        default:
-//            throw Error.invalidQuery(query)
-//        }
-
         do {
             let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
 
@@ -143,11 +126,6 @@ extension MongoQueryConverter {
         return self.filter(database, on: eventLoop).flatMap { filter in
             database.collection(self.query.schema).deleteMany(filter).transform(to: [])
         }
-    }
-
-    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-
-        return eventLoop.makeSucceededFuture([])
     }
 
     private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
@@ -171,8 +149,9 @@ extension MongoQueryConverter {
         pipeline += try self.query.sorts.mongoSort(mainSchema: schema)
         pipeline += try self.query.offsets.mongoSkip()
         pipeline += try self.query.limits.mongoLimit()
-        // TODO: re-enable all the stages
-        //appendStages(self.aggregates())
+        if case .aggregate(let aggregate) = self.query.action {
+            pipeline += try aggregate.mongoAggregate(mainSchema: schema)
+        }
 
         return pipeline
     }

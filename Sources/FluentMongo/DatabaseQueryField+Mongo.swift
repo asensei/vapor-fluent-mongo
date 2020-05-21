@@ -107,7 +107,7 @@ extension FieldKey {
         case .string(let value):
             return value
         case .aggregate:
-            return "aggregate"
+            return "aggregate_result"
         }
     }
 }

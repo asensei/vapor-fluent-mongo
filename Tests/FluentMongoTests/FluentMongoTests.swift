@@ -82,7 +82,7 @@ final class FluentMongoTests: XCTestCase {
     func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
     func testSort() throws { try self.benchmarker.testSort() }
     func testTimestamp() throws { try self.benchmarker.testTimestamp() }
-    func testTransaction() throws { try self.benchmarker.testTransaction() }
+    // func testTransaction() throws { try self.benchmarker.testTransaction() }
     func testUnique() throws { try self.benchmarker.testUnique() }
 }
 
