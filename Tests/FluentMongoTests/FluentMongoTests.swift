@@ -73,7 +73,7 @@ final class FluentMongoTests: XCTestCase {
 //    func testMigrator() throws { try self.benchmarker.testMigrator() }
 //    func testModel() throws { try self.benchmarker.testModel() }
 //    func testOptionalParent() throws { try self.benchmarker.testOptionalParent() }
-//    func testPagination() throws { try self.benchmarker.testPagination() }
+    func testPagination() throws { try self.benchmarker.testPagination() }
 //    func testParent() throws { try self.benchmarker.testParent() }
 //    func testPerformance() throws { try self.benchmarker.testPerformance() }
 //    func testRange() throws { try self.benchmarker.testRange() }

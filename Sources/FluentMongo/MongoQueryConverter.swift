@@ -194,9 +194,9 @@ extension MongoQueryConverter {
             pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
         }
         pipeline += try self.query.sorts.mongoSort(mainSchema: schema)
+        pipeline += try self.query.offsets.mongoSkip()
+        pipeline += try self.query.limits.mongoLimit()
         // TODO: re-enable all the stages
-        //appendStage("$skip", self.skip())
-        //appendStage("$limit", self.limit())
         //appendStages(self.aggregates())
 
         return pipeline

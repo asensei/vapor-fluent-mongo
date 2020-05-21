@@ -21,6 +21,8 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
     case unsupportedQueryAction
     case unsupportedSort
     case unsupportedSortDirection
+    case unsupportedOffset
+    case unsupportedLimit
 
     public var description: String {
         switch self {
@@ -48,6 +50,10 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
             return "Unsupported sort"
         case .unsupportedSortDirection:
             return "Unsupported sort direction"
+        case .unsupportedOffset:
+            return "Unsupported offset"
+        case .unsupportedLimit:
+            return "Unsupported limit"
         }
     }
 
