@@ -84,3 +84,12 @@ extension DatabaseQuery.Join.Method: Equatable {
         }
     }
 }
+
+extension Array where Element == DatabaseQuery.Join {
+
+    func mongoLookup() throws -> [Document] {
+        return try self.flatMap { join -> [Document] in
+            try join.mongoLookup()
+        }
+    }
+}

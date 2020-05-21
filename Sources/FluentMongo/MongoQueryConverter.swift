@@ -157,117 +157,6 @@ extension MongoQueryConverter {
 
 extension MongoQueryConverter {
 
-    private func joins() throws -> [Document] {
-        return try self.query.joins.flatMap { join -> [Document] in
-            try join.mongoLookup()
-        }
-    }
-
-    private func match(aggregate: Bool) throws -> Document? {
-
-        guard !self.query.filters.isEmpty else {
-            return nil
-        }
-
-        let filters = try self.query.filters.map { filter in
-            try filter.mongoFilter(aggregate: false, mainSchema: self.query.schema, encoder: self.encoder)
-        }
-
-        switch filters.count {
-        case 1:
-            return filters.first
-        default:
-            return try DatabaseQuery.Filter.Relation.and.mongoGroup(filters: filters)
-        }
-        //        // Apply
-        //
-        //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
-        //
-        //        switch query.filters {
-        //        case .some(let document):
-        //            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
-        //        case .none:
-        //            return filterByRemovingRootNamespace
-        //        }
-    }
-
-    private func projection() -> Document? {
-        var projection = Document()
-
-        for field in self.query.fields {
-
-            let key: String
-
-            switch field {
-            case .path(let value, let schema):
-                let path = self.query.schema == schema
-                    ? value
-                    : ([.string(schema)] + value)
-                key = path.mongoKeys.dotNotation
-            case .custom(let value as String):
-                key = value
-            default:
-                continue
-            }
-
-            projection[key] = true
-        }
-
-        guard !projection.isEmpty else {
-            return nil
-        }
-
-        projection["_id"] = true
-
-        return projection
-    }
-/*
-    private func distinct() -> [Document]? {
-        #warning("TODO: Not supported")
-        guard /*self.query.isDistinct*/ false else {
-            return nil
-        }
-
-        var stages = [Document]()
-        var group = Document()
-        var id = Document()
-
-        for field in self.query.fields {
-
-            let key: String
-            let value: String
-
-            switch field {
-            case .field(let path, let schema, let alias):
-                // It is not possible to use dots when specifying an id field for $group
-                let queryField = DatabaseQuery.Field.QueryField(path: path, schema: schema, alias: alias)
-                key = queryField.pathWithNamespace.joined(separator: ":")
-                value = "$" + (self.query.schema == schema
-                    ? path
-                    : queryField.pathWithNamespace
-                ).joined(separator: ".")
-            case .custom(let value as String):
-                #warning("TODO: Not supported")
-                fatalError()
-            default:
-                continue
-            }
-
-            id[key] = value
-        }
-
-        if id.isEmpty {
-            id[self.query.schema + ":_id"] = "$_id"
-        }
-
-        group["_id"] = id
-        group["doc"] = ["$first": "$$ROOT"] as Document
-
-        stages.append(["$group": group])
-        stages.append(["$replaceRoot": ["newRoot": "$doc"] as Document])
-
-        return stages
-    }*/
 /*
     private func sort() -> Document? {
         #warning("TODO: implement this")
@@ -294,30 +183,17 @@ extension MongoQueryConverter {
 extension MongoQueryConverter {
 
     private func aggregationPipeline() throws -> [Document] {
+
+        let schema = self.query.schema
         var pipeline = [Document]()
 
-        func appendStage(_ name: String, _ value: Document?) {
-            guard let value = value else {
-                return
-            }
-
-            pipeline.append([name: .document(value)])
+        pipeline += try self.query.joins.mongoLookup()
+        pipeline += try self.query.filters.mongoMatch(mainSchema: schema, encoder: self.encoder)
+        pipeline += try self.query.fields.mongoProject(mainSchema: schema)
+        if self.query.isUnique {
+            pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
         }
-
-        func appendStages(_ values: [Document]?) {
-            guard let values = values, !values.isEmpty else {
-                return
-            }
-
-            pipeline.append(contentsOf: values)
-        }
-
         // TODO: re-enable all the stages
-        let joins = try self.joins()
-        appendStages(joins)
-        appendStage("$match", try self.match(aggregate: false))
-        appendStage("$project", self.projection())
-        //appendStages(self.distinct())
         //appendStage("$sort", self.sort())
         //appendStage("$skip", self.skip())
         //appendStage("$limit", self.limit())

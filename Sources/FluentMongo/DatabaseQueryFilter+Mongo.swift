@@ -11,11 +11,11 @@ import FluentKit
 
 extension DatabaseQuery.Filter {
 
-    func mongoFilter(aggregate: Bool, mainSchema: String, encoder: BSONEncoder) throws -> Document {
+    func mongoFilter(mainSchema: String, encoder: BSONEncoder) throws -> Document? {
         switch self {
         case .value(let field, let method, let value):
             #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-            let key = try field.mongoKeyPath(namespace: aggregate)
+            let key = try field.mongoKeyPath(namespace: false)
             let mongoOperator = try method.mongoOperator()
             let bsonValue = try value.mongoValue(encoder: encoder)
 
@@ -27,7 +27,7 @@ extension DatabaseQuery.Filter {
 
             return ["$expr": [mongoOperator: .array([lhsKey, rhsKey])]]
         case .group(let filters, let relation):
-            let filters = try filters.map { try $0.mongoFilter(aggregate: aggregate, mainSchema: mainSchema, encoder: encoder) }
+            let filters = try filters.compactMap { try $0.mongoFilter(mainSchema: mainSchema, encoder: encoder) }
 
             return try relation.mongoGroup(filters: filters)
         case .custom(let document as Document):
@@ -35,6 +35,34 @@ extension DatabaseQuery.Filter {
         case .custom:
             throw Error.unsupportedFilter
         }
+    }
+}
+
+extension Array where Element == DatabaseQuery.Filter {
+
+    func mongoMatch(mainSchema: String, encoder: BSONEncoder) throws -> [Document] {
+
+         let filters = try self.compactMap { filter in
+             try filter.mongoFilter(mainSchema: mainSchema, encoder: encoder)
+         }
+
+        guard let group = try DatabaseQuery.Filter.Relation.and.mongoGroup(filters: filters) else {
+            return []
+        }
+
+        // TODO: Check this
+        //        // Apply
+        //
+        //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
+        //
+        //        switch query.filters {
+        //        case .some(let document):
+        //            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
+        //        case .none:
+        //            return filterByRemovingRootNamespace
+        //        }
+
+        return [["$match": .document(group)]]
     }
 }
 
@@ -84,7 +112,14 @@ extension DatabaseQuery.Filter.Relation {
         }
     }
 
-    func mongoGroup(filters: [Document]) throws -> Document {
-        return [try self.mongoOperator(): .array(filters.map { .document($0) })]
+    func mongoGroup(filters: [Document]) throws -> Document? {
+        switch filters.count {
+        case 0:
+            return nil
+        case 1:
+            return filters.first
+        default:
+            return [try self.mongoOperator(): .array(filters.map { .document($0) })]
+        }
     }
 }
