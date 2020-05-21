@@ -121,7 +121,7 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible, Databas
 extension EventLoopFuture where Value: Model {
 
     @discardableResult
-    public func catchIfDuplicatedKeyError(_ callback: @escaping (Error) -> EventLoopFuture<Value>) -> EventLoopFuture<Value> {
+    public func flatMapErrorIfDuplicatedKey(_ callback: @escaping (Error) -> EventLoopFuture<Value>) -> EventLoopFuture<Value> {
         return self.flatMapError { error in
             guard
                 let mongoError = error as? Error,
@@ -135,7 +135,7 @@ extension EventLoopFuture where Value: Model {
     }
 
     @discardableResult
-    public func catchMapIfDuplicatedKeyError(_ callback: @escaping (Error) throws -> Value) -> EventLoopFuture<Value> {
+    public func flatMapErrorThrowingIfDuplicatedKey(_ callback: @escaping (Error) throws -> Value) -> EventLoopFuture<Value> {
         return self.flatMapErrorThrowing { error in
             guard
                 let mongoError = error as? Error,

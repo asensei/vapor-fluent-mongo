@@ -14,8 +14,7 @@ extension DatabaseQuery.Filter {
     func mongoFilter(mainSchema: String, encoder: BSONEncoder) throws -> Document? {
         switch self {
         case .value(let field, let method, let value):
-            #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
-            let key = try field.mongoKeyPath(namespace: false)
+            let key = try field.mongoKeyPath(namespace: field.schema != mainSchema)
             let mongoOperator = try method.mongoOperator()
             let bsonValue = try value.mongoValue(encoder: encoder)
 

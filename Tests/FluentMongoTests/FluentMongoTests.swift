@@ -56,7 +56,6 @@ final class FluentMongoTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-//    func testAll() throws { try self.benchmarker.testAll() }
     func testAggregate() throws { try self.benchmarker.testAggregate() }
     func testArray() throws { try self.benchmarker.testArray() }
     func testBatch() throws { try self.benchmarker.testBatch() }
@@ -82,7 +81,7 @@ final class FluentMongoTests: XCTestCase {
     func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
     func testSort() throws { try self.benchmarker.testSort() }
     func testTimestamp() throws { try self.benchmarker.testTimestamp() }
-    // func testTransaction() throws { try self.benchmarker.testTransaction() }
+    func testTransaction() throws { try self.benchmarker.testTransaction() }
     func testUnique() throws { try self.benchmarker.testUnique() }
 }
 

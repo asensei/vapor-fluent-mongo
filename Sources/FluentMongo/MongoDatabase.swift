@@ -59,17 +59,6 @@ struct FluentMongoDatabase: Database {
     }
 
     func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
-        /**
-         Printing description of enum:
-         ▿ DatabaseEnum
-           - action : FluentKit.DatabaseEnum.Action.create
-           - name : "bar"
-           ▿ createCases : 2 elements
-             - 0 : "baz"
-             - 1 : "qux"
-           - deleteCases : 0 elements
-         */
-        // #warning("TODO: Dale check this needs to do anything in regards to the schema.")
         self.eventLoop.makeSucceededFuture(Void())
     }
 
