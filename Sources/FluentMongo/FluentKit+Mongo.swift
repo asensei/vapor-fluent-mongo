@@ -107,7 +107,7 @@ extension DatabaseQuery.Filter {
     func mongoFilter(aggregate: Bool, mainSchema: String, encoder: BSONEncoder) throws -> Document {
         switch self {
         case .value(let field, let method, let value):
-            // #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
+            #warning("TODO: check if we need path or pathWithNamespace - related to byRemovingKeysPrefix")
             let key = try field.mongoKeyPath(namespace: aggregate)
             let mongoOperator = try method.mongoOperator()
             let bsonValue = try value.mongoValue(encoder: encoder)
@@ -126,7 +126,7 @@ extension DatabaseQuery.Filter {
         case .custom(let document as Document):
             return document
         case .custom:
-            fatalError()
+            throw Error.unsupportedFilter
         }
     }
 }
@@ -148,6 +148,46 @@ extension DatabaseQuery.Filter.Relation {
 
     func mongoGroup(filters: [Document]) throws -> Document {
         return [try self.mongoOperator(): .array(filters.map { .document($0) })]
+    }
+}
+
+extension DatabaseQuery.Join {
+
+    func mongoLookup() throws -> [Document] {
+        switch self {
+        case .join(let schema, let alias, let method, let foreign, let local):
+
+            let lookup: Document = [
+                "$lookup": [
+                    "from": .string(schema),
+                    "localField": .string(try local.mongoKeyPath()),
+                    "foreignField": .string(try foreign.mongoKeyPath()),
+                    "as": .string(alias ?? schema)
+                ]
+            ]
+
+            func unwind(preserveNullAndEmptyArrays: Bool) -> Document {
+                return [
+                    "$unwind": [
+                        "path": .string("$" + (alias ?? schema)),
+                        "preserveNullAndEmptyArrays": .bool(preserveNullAndEmptyArrays)
+                    ]
+                ]
+            }
+
+            switch method {
+            case .left:
+                return [lookup]
+            case .inner:
+                return [lookup, unwind(preserveNullAndEmptyArrays: false)]
+            case .outer:
+                return [lookup, unwind(preserveNullAndEmptyArrays: true)]
+            default:
+                throw Error.unsupportedJoinMethod
+            }
+        case .custom:
+            throw Error.unsupportedJoin
+        }
     }
 }
 

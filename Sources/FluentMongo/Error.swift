@@ -16,7 +16,9 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
     case unsupportedValue
     case unsupportedJoin
     case unsupportedJoinMethod
+    case unsupportedFilter
     case unsupportedFilterRelation
+    case unsupportedQueryAction
 
     public var description: String {
         switch self {
@@ -34,8 +36,12 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
             return "Unsupported join"
         case .unsupportedJoinMethod:
             return "Unsupported join method"
+        case .unsupportedFilter:
+            return "Unsupported filter"
         case .unsupportedFilterRelation:
             return "Unsupported filter relation"
+        case .unsupportedQueryAction:
+            return "Unsupported query action"
         }
     }
 

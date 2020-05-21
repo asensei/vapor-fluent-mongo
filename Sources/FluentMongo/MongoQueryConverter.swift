@@ -39,9 +39,10 @@ struct MongoQueryConverter {
             future = self.delete(database, on: eventLoop)
         case .aggregate(let value):
             future = self.aggregate(value, database, on: eventLoop)
-        case .custom(_):
-            fatalError()
-            //future custom(any)
+        case .custom(let command as Document):
+            future = self.custom(command, database, on: eventLoop)
+        case .custom:
+            future = eventLoop.makeFailedFuture(Error.unsupportedQueryAction)
         }
 
         return future
@@ -149,9 +150,8 @@ extension MongoQueryConverter {
         return eventLoop.makeSucceededFuture([])
     }
 
-    private func custom(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        #warning("TODO: implement this")
-        return eventLoop.makeSucceededFuture([])
+    private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        return database.runCommand(command).map { [$0.databaseOutput(using: self.decoder)] }
     }
 }
 
@@ -159,41 +159,7 @@ extension MongoQueryConverter {
 
     private func joins() throws -> [Document] {
         return try self.query.joins.flatMap { join -> [Document] in
-
-            switch join {
-            case .join(let schema, let alias, let method, let foreign, let local):
-
-                let lookup: Document = [
-                    "$lookup": [
-                        "from": .string(schema),
-                        "localField": .string(try local.mongoKeyPath()),
-                        "foreignField": .string(try foreign.mongoKeyPath()),
-                        "as": .string(alias ?? schema)
-                    ]
-                ]
-
-                func unwind(preserveNullAndEmptyArrays: Bool) -> Document {
-                    return [
-                        "$unwind": [
-                            "path": .string("$" + (alias ?? schema)),
-                            "preserveNullAndEmptyArrays": .bool(preserveNullAndEmptyArrays)
-                        ]
-                    ]
-                }
-
-                switch method {
-                case .left:
-                    return [lookup]
-                case .inner:
-                    return [lookup, unwind(preserveNullAndEmptyArrays: false)]
-                case .outer:
-                    return [lookup, unwind(preserveNullAndEmptyArrays: true)]
-                default:
-                    throw Error.unsupportedJoinMethod
-                }
-            case .custom:
-                throw Error.unsupportedJoin
-            }
+            try join.mongoLookup()
         }
     }
 
