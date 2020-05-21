@@ -7,11 +7,16 @@
 //
 
 import Foundation
+import FluentKit
+import MongoSwift
 
-public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
+public enum Error: Swift.Error, LocalizedError, CustomStringConvertible, DatabaseError {
+    case duplicatedKey(String)
     case invalidResult
     case insertManyMismatch(Int, Int)
+    case collectionNotFound(String)
     case unsupportedField
+    case unsupportedFieldName
     case unsupportedOperator
     case unsupportedValue
     case unsupportedJoin
@@ -28,12 +33,18 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
 
     public var description: String {
         switch self {
+        case .duplicatedKey(let message):
+            return "Duplicated key. \(message)"
         case .invalidResult:
             return "Query returned no results"
         case .insertManyMismatch(let count, let expected):
             return "Inserted \(count) documents out of \(expected)"
+        case .collectionNotFound(let name):
+            return "Collection \"\(name)\" not found"
         case .unsupportedField:
             return "Unsupported field"
+        case .unsupportedFieldName:
+            return "Unsupported field name"
         case .unsupportedOperator:
             return "Unsupported operator"
         case .unsupportedValue:
@@ -65,5 +76,94 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible {
 
     public var errorDescription: String? {
         return self.description
+    }
+
+    public var isSyntaxError: Bool {
+        switch self {
+        case .duplicatedKey,
+             .invalidResult,
+             .insertManyMismatch:
+            return false
+        case .collectionNotFound,
+             .unsupportedField,
+             .unsupportedFieldName,
+             .unsupportedOperator,
+             .unsupportedValue,
+             .unsupportedJoin,
+             .unsupportedJoinMethod,
+             .unsupportedFilter,
+             .unsupportedFilterRelation,
+             .unsupportedQueryAction,
+             .unsupportedSort,
+             .unsupportedSortDirection,
+             .unsupportedOffset,
+             .unsupportedLimit,
+             .unsupportedAggregate,
+            .unsupportedAggregateMethod:
+            return true
+        }
+    }
+
+    public var isConstraintFailure: Bool {
+        switch self {
+        case .duplicatedKey:
+            return true
+        default:
+            return false
+        }
+    }
+
+    public var isConnectionClosed: Bool {
+        return false
+    }
+}
+
+extension EventLoopFuture where Value: Model {
+
+    @discardableResult
+    public func catchIfDuplicatedKeyError(_ callback: @escaping (Error) -> EventLoopFuture<Value>) -> EventLoopFuture<Value> {
+        return self.flatMapError { error in
+            guard
+                let mongoError = error as? Error,
+                case .duplicatedKey = mongoError
+                else {
+                    return self.eventLoop.makeFailedFuture(error)
+            }
+
+            return callback(mongoError)
+        }
+    }
+
+    @discardableResult
+    public func catchMapIfDuplicatedKeyError(_ callback: @escaping (Error) throws -> Value) -> EventLoopFuture<Value> {
+        return self.flatMapErrorThrowing { error in
+            guard
+                let mongoError = error as? Error,
+                case .duplicatedKey = mongoError
+                else {
+                    throw error
+            }
+
+            return try callback(mongoError)
+        }
+    }
+}
+
+extension WriteError {
+    var isDuplicatedKeyError: Bool {
+        return self.writeFailure?.code == 11000 || self.writeConcernFailure?.code == 11000
+    }
+}
+
+extension BulkWriteError {
+    var isDuplicatedKeyError: Bool {
+        switch (self.writeFailures, self.writeConcernFailure) {
+        case (_, .some(let failure)):
+            return failure.code == 11000
+        case (.some(let failures), _):
+            return failures.contains { $0.code == 11000 }
+        default:
+            return false
+        }
     }
 }

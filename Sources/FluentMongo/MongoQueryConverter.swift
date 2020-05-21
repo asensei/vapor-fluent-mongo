@@ -99,6 +99,15 @@ extension MongoQueryConverter {
                 return result.insertedIds.map {
                     Document(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(using: self.decoder)
                 }
+            }.flatMapErrorThrowing { error in
+                switch error {
+                case let error as WriteError where error.isDuplicatedKeyError:
+                    throw Error.duplicatedKey(error.errorDescription ?? "No error description available.")
+                case let error as BulkWriteError where error.isDuplicatedKeyError:
+                    throw Error.duplicatedKey(error.errorDescription ?? "No error description available.")
+                default:
+                    throw error
+                }
             }
         } catch {
             return eventLoop.makeFailedFuture(error)
@@ -143,9 +152,9 @@ extension MongoQueryConverter {
         pipeline += try self.query.joins.mongoLookup()
         pipeline += try self.query.filters.mongoMatch(mainSchema: schema, encoder: self.encoder)
         pipeline += try self.query.fields.mongoProject(mainSchema: schema)
-        if self.query.isUnique {
-            pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
-        }
+//        if self.query.isDistinct {
+//            pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
+//        }
         pipeline += try self.query.sorts.mongoSort(mainSchema: schema)
         pipeline += try self.query.offsets.mongoSkip()
         pipeline += try self.query.limits.mongoLimit()
@@ -176,4 +185,3 @@ extension MongoQueryConverter {
         }
     }
 }
-
