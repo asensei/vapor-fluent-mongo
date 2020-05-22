@@ -18,32 +18,32 @@ struct MongoSchemaConverter {
 
     private let schema: DatabaseSchema
 
-    public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+    public func convert(_ database: MongoSwift.MongoDatabase, session: ClientSession? = nil, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
         switch self.schema.action {
         case .create:
-            return self.create(database, on: eventLoop)
+            return self.create(database, session, on: eventLoop)
         case .update:
-            return self.update(database, on: eventLoop)
+            return self.update(database, session, on: eventLoop)
         case .delete:
-            return self.delete(database, on: eventLoop)
+            return self.delete(database, session, on: eventLoop)
         }
     }
 }
 
 extension MongoSchemaConverter {
 
-    private func create(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+    private func create(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
         do {
             // TODO: re-enable once https://github.com/vapor/fluent-kit/issues/282 is fixed
             let options = try CreateCollectionOptions(validator: nil/*self.schema.createFields.mongoValidator()*/)
 
-            return database.createCollection(self.schema.schema, options: options).flatMap { collection in
+            return database.createCollection(self.schema.schema, options: options, session: session).flatMap { collection in
                 do {
                     let indexModels = try self.schema.constraints.mongoIndexes()
                     guard !indexModels.isEmpty else {
                         return eventLoop.makeSucceededFuture(Void())
                     }
-                    return collection.createIndexes(indexModels).transform(to: Void())
+                    return collection.createIndexes(indexModels, session: session).transform(to: Void())
                 } catch {
                     return eventLoop.makeFailedFuture(error)
                 }
@@ -53,10 +53,10 @@ extension MongoSchemaConverter {
         }
     }
 
-    private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+    private func update(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
 
         return database
-            .listCollections(["name": .string(self.schema.schema)])
+            .listCollections(["name": .string(self.schema.schema)], session: session)
             .flatMap { $0.toArray() }
             .flatMap {
                 do {
@@ -70,14 +70,14 @@ extension MongoSchemaConverter {
                         "collMod": .string(self.schema.schema),
                         "validator": .document(validator),
                         "validationLevel": "moderate"
-                    ]).transform(to: Void())
+                    ], session: session).transform(to: Void())
                 } catch {
                     return eventLoop.makeFailedFuture(error)
                 }
             }
     }
 
-    private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-        return database.collection(self.schema.schema).drop()
+    private func delete(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
+        return database.collection(self.schema.schema).drop(session: session)
     }
 }

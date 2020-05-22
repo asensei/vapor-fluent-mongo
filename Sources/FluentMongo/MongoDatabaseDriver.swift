@@ -70,13 +70,13 @@ struct ConnectionPoolMongoDatabase: MongoDatabase {
         self.pool.eventLoop
     }
 
-    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
         self.withConnection {
             $0.execute(closure, onOutput)
         }
     }
 
-    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.withConnection {
             $0.execute(closure)
         }

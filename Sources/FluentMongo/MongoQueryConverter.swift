@@ -24,7 +24,7 @@ struct MongoQueryConverter {
 
     private let decoder: BSONDecoder
 
-    public func convert(_ database: MongoSwift.MongoDatabase, session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    public func convert(_ database: MongoSwift.MongoDatabase, session: ClientSession? = nil, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
         let future: EventLoopFuture<[DatabaseOutput]>
 

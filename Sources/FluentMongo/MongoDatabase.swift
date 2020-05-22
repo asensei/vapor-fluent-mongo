@@ -16,16 +16,16 @@ protocol MongoDatabase {
 
     var logger: Logger { get }
 
-    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
 
-    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 
     func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
 extension MongoDatabase {
 
-    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>) -> EventLoopFuture<[DatabaseOutput]> {
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>) -> EventLoopFuture<[DatabaseOutput]> {
         var results: [DatabaseOutput] = []
 
         return self.execute(closure) { result in
