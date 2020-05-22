@@ -24,23 +24,23 @@ struct MongoQueryConverter {
 
     private let decoder: BSONDecoder
 
-    public func convert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    public func convert(_ database: MongoSwift.MongoDatabase, session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
         let future: EventLoopFuture<[DatabaseOutput]>
 
         switch self.query.action {
         case .read:
-            future = self.find(database, on: eventLoop)
+            future = self.find(database, session, on: eventLoop)
         case .create:
-            future = self.insert(database, on: eventLoop)
+            future = self.insert(database, session, on: eventLoop)
         case .update:
-            future = self.update(database, on: eventLoop)
+            future = self.update(database, session, on: eventLoop)
         case .delete:
-            future = self.delete(database, on: eventLoop)
+            future = self.delete(database, session, on: eventLoop)
         case .aggregate(let value):
-            future = self.aggregate(value, database, on: eventLoop)
+            future = self.aggregate(value, database, session, on: eventLoop)
         case .custom(let command as Document):
-            future = self.custom(command, database, on: eventLoop)
+            future = self.custom(command, database, session, on: eventLoop)
         case .custom:
             future = eventLoop.makeFailedFuture(Error.unsupportedQueryAction)
         }
@@ -51,14 +51,14 @@ struct MongoQueryConverter {
 
 extension MongoQueryConverter {
 
-    private func find(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func find(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
 
         let collection = database.collection(self.query.schema)
 
         do {
             let pipeline = try self.aggregationPipeline()
 
-            return collection.aggregate(pipeline, options: nil).flatMap { cursor in
+            return collection.aggregate(pipeline, options: nil, session: session).flatMap { cursor in
                 cursor.toArray().mapEach { $0.databaseOutput(using: self.decoder) }
             }
         } catch {
@@ -66,13 +66,13 @@ extension MongoQueryConverter {
         }
     }
 
-    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase,  _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         let collection = database.collection(self.query.schema)
 
         do {
             let pipeline = try self.aggregationPipeline()
 
-            return collection.aggregate(pipeline, options: nil).flatMap { cursor in
+            return collection.aggregate(pipeline, options: nil, session: session).flatMap { cursor in
                 cursor.toArray()
                     .flatMapThrowing { $0.isEmpty ? [try aggregate.mongoAggregationEmptyResult()] : $0 }
                     .mapEach { $0.databaseOutput(using: self.decoder) }
@@ -82,12 +82,12 @@ extension MongoQueryConverter {
         }
     }
 
-    private func insert(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func insert(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
             let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
             let collection = database.collection(self.query.schema)
 
-            return collection.insertMany(documents).flatMapThrowing { result in
+            return collection.insertMany(documents, session: session).flatMapThrowing { result in
                 guard let result = result else {
                     throw Error.invalidResult
                 }
@@ -114,14 +114,14 @@ extension MongoQueryConverter {
         }
     }
 
-    private func update(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func update(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
             let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
 
-            return self.filter(database, on: eventLoop).flatMap { filter in
+            return self.filter(database, session, on: eventLoop).flatMap { filter in
                 let collection = database.collection(self.query.schema)
                 let updates = documents.map { document in
-                    collection.updateMany(filter: filter, update: ["$set": .document(document)])
+                    collection.updateMany(filter: filter, update: ["$set": .document(document)], session: session)
                 }.flatten(on: eventLoop)
 
                 return updates.transform(to: [])
@@ -131,14 +131,14 @@ extension MongoQueryConverter {
         }
     }
 
-    private func delete(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        return self.filter(database, on: eventLoop).flatMap { filter in
-            database.collection(self.query.schema).deleteMany(filter).transform(to: [])
+    private func delete(_ database: MongoSwift.MongoDatabase,  _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        return self.filter(database, session, on: eventLoop).flatMap { filter in
+            database.collection(self.query.schema).deleteMany(filter, session: session).transform(to: [])
         }
     }
 
-    private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        return database.runCommand(command).map { [$0.databaseOutput(using: self.decoder)] }
+    private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+        return database.runCommand(command, session: session).map { [$0.databaseOutput(using: self.decoder)] }
     }
 }
 
@@ -165,7 +165,7 @@ extension MongoQueryConverter {
         return pipeline
     }
 
-    private func filter(_ database: MongoSwift.MongoDatabase, on eventLoop: EventLoop) -> EventLoopFuture<Document> {
+    private func filter(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Document> {
 
         guard !self.query.filters.isEmpty else {
             return eventLoop.makeSucceededFuture(.init())
@@ -175,7 +175,7 @@ extension MongoQueryConverter {
             var pipeline = try self.aggregationPipeline()
             pipeline.append(["$project": ["_id": true]])
 
-            return database.collection(self.query.schema).aggregate(pipeline).flatMap { cursor in
+            return database.collection(self.query.schema).aggregate(pipeline, session: session).flatMap { cursor in
                 cursor.toArray().map {
                     ["_id": ["$in": .array($0.compactMap { $0["_id"] })]]
                 }
