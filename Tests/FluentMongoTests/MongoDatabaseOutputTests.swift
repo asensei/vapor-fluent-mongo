@@ -29,7 +29,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
             {
                 "key": "value",
                 "_id": "abc123",
-                "aggregate": "abcd4567",
+                "aggregate_result": "abcd4567",
                 "object1": {
                     "object2": {
                         "object3": {
@@ -54,7 +54,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
         var document = Document()
         document.key = "value"
         document._id = "abc123"
-        document.aggregate = "abcd4567"
+        document.aggregate_result = "abcd4567"
         document.object1 = BSON(dictionaryLiteral:("object2", BSON(dictionaryLiteral:("object3", BSON(dictionaryLiteral:("embeddedKey", "embeddedKey"))))))
         let output = document.databaseOutput(using: BSONDecoder())
 
@@ -107,7 +107,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
 
         let elements: [FieldKey] = [.id, .aggregate, .string("a"), "b"]
 
-        XCTAssertEqual(elements.mongoKeys.dotNotation, "_id.aggregate.a.b")
+        XCTAssertEqual(elements.mongoKeys.dotNotation, "_id.aggregate_result.a.b")
     }
 }
 
