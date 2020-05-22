@@ -83,11 +83,11 @@ final class MongoConnection: ConnectionPoolItem, MongoDatabase {
 
     // MARK: MongoDatabase
 
-    public func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
+    public func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
 
         let database = self.client.db(self.database)
 
-        return closure(database, nil, self.eventLoop).map { results in
+        return closure(database, self.eventLoop).map { results in
             guard !results.isEmpty else {
                 return
             }
@@ -100,8 +100,14 @@ final class MongoConnection: ConnectionPoolItem, MongoDatabase {
         }
     }
 
-    public func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        return closure(self.client.db(self.database), nil, self.eventLoop)
+    public func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        closure(self.client.db(self.database), self.eventLoop)
+    }
+
+    public func withSession<T>(_ closure: @escaping (ClientSession) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.client.withSession { session in
+            closure(session)
+        }
     }
 
     public func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {

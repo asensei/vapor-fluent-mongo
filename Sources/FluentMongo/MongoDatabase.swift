@@ -16,16 +16,18 @@ protocol MongoDatabase {
 
     var logger: Logger { get }
 
-    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
 
-    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+
+    func withSession<T>(_ closure: @escaping (ClientSession) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 
     func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
 extension MongoDatabase {
 
-    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, ClientSession?, EventLoop) -> EventLoopFuture<[DatabaseOutput]>) -> EventLoopFuture<[DatabaseOutput]> {
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>) -> EventLoopFuture<[DatabaseOutput]> {
         var results: [DatabaseOutput] = []
 
         return self.execute(closure) { result in
@@ -40,21 +42,27 @@ struct FluentMongoDatabase: Database {
 
     let context: DatabaseContext
 
+    let session: ClientSession?
+
     let encoder: BSONEncoder
 
     let decoder: BSONDecoder
 
     func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
-        return self.database.withConnection { connection in
-            return connection.execute(MongoQueryConverter(query, encoder: self.encoder, decoder: self.decoder).convert) { result in
+        self.database.withConnection { connection in
+            connection.execute({ database, eventLoop in
+                MongoQueryConverter(query, encoder: self.encoder, decoder: self.decoder).convert(database, session: self.session, on: eventLoop)
+            }) { result in
                 onOutput(result)
             }
         }
     }
 
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
-        return self.database.withConnection { connection in
-            return connection.execute(MongoSchemaConverter(schema).convert)
+        self.database.withConnection { connection in
+            connection.execute { database, eventLoop in
+                MongoSchemaConverter(schema).convert(database, session: self.session, on: eventLoop)
+            }
         }
     }
 
@@ -63,15 +71,35 @@ struct FluentMongoDatabase: Database {
     }
 
     func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        #warning("TODO: Support transactions")
-        fatalError()
+        self.database.withConnection { connection in
+            connection.withSession { session in
+                session.startTransaction().flatMap {
+                    let transactionDatabase = FluentMongoDatabase(
+                        database: connection,
+                        context: self.context,
+                        session: session,
+                        encoder: self.encoder,
+                        decoder: self.decoder
+                    )
+
+                    return closure(transactionDatabase)
+                        .flatMap { value in
+                            session.commitTransaction().map { value }
+                        }
+                        .flatMapError { error in
+                            session.abortTransaction().flatMapThrowing { throw error }
+                        }
+                }
+            }
+        }
     }
 
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        self.database.withConnection {
+        self.database.withConnection { connection in
             closure(FluentMongoDatabase(
-                database: $0,
+                database: connection,
                 context: self.context,
+                session: nil,
                 encoder: self.encoder,
                 decoder: self.decoder
             ))
