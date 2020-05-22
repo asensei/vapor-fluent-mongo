@@ -84,9 +84,8 @@ extension DatabaseQuery.Filter.Method {
             }
         case .subset(let inverse):
             return inverse ? "$nin" : "$in"
-        case .contains(let inverse, let location):
-            #warning("TODO: implement this")
-            throw Error.unsupportedOperator
+        case .contains(let inverse, _):
+            return inverse ? "$nin" : "$in"
         case .custom(let value as String):
             return value
         default:

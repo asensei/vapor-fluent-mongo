@@ -8,23 +8,18 @@
 
 import Foundation
 import FluentMongo
-/*
-final class PetToy: FluentMongoModel, Pivot {
 
-    typealias Database = MongoDatabase
+final class PetToy: Model {
 
-    typealias ID = UUID
+    static let schema = "pet_toys"
 
-    typealias Left = Pet
+    @ID(key: .id)
+    var id: UUID?
 
-    typealias Right = Toy
+    @Parent(key: "petId")
+    var pet: Pet
 
-    static var leftIDKey: LeftIDKey = \.petId
-
-    static var rightIDKey: RightIDKey = \.toyId
-
-    var _id: UUID?
-    var petId: Pet.ID
-    var toyId: Toy.ID
+    @Parent(key: "toyId")
+    var toy: Toy
 }
-*/
+
