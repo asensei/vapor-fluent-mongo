@@ -153,51 +153,56 @@ class FluentMongoTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-//
-//    func testPush() {
-//        do {
-//            let database = self.database
-//
-//            var alice = try User(name: "Alice", age: 42).create(on: database).wait()
-//            var bob = try User(name: "Bob", age: 42, names: ["b"]).create(on: database).wait()
-//
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == alice.requireID()).update(\.$names, push: ["al"]).run().wait())
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == bob.requireID()).update(\.$names, push: ["a", "b", "c"]).run().wait())
-//
-//            alice = try User.find(alice.requireID(), on: database).wait()!
-//            bob = try User.find(bob.requireID(), on: database).wait()!
-//
-//            XCTAssertEqual(alice.names, ["al"])
-//            XCTAssertEqual(bob.names, ["b", "a", "b", "c"])
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//    }
-//
-//    func testPullAll() {
-//        do {
-//            let database = self.database
-//
-//            var alice = try User(name: "Alice", age: 42).create(on: database).wait()
-//            var bob = try User(name: "Bob", age: 42, nicknames: ["a", "b", "c"]).create(on: database).wait()
-//            var charlie = try User(name: "Charlie", age: 42, nicknames: ["d", "e", "f", "e"]).create(on: database).wait()
-//
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == alice.requireID()).update(\.$nicknames, pullAll: ["al"]).run().wait())
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == bob.requireID()).update(\.$nicknames, pullAll: ["a", "b", "c"]).run().wait())
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == charlie.requireID()).update(\.$nicknames, pullAll: ["d", "e"]).run().wait())
-//
-//            alice = try User.find(alice.requireID(), on: database).wait()!
-//            bob = try User.find(bob.requireID(), on: database).wait()!
-//            charlie = try User.find(charlie.requireID(), on: database).wait()!
-//
-//            XCTAssertNil(alice.nicknames)
-//            XCTAssertEqual(bob.nicknames, [])
-//            XCTAssertEqual(charlie.nicknames, ["f"])
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//    }
-//
+
+    func testPush() {
+        do {
+            let database = self.database
+
+            var alice = User(name: "Alice", age: 42, names: [])
+            try alice.create(on: database).wait()
+            var bob = User(name: "Bob", age: 42, names: ["b"])
+            try bob.create(on: database).wait()
+
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == alice.requireID()).set(\.$names, push: ["al"]).update().wait())
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == bob.requireID()).set(\.$names, push: ["a", "b", "c"]).update().wait())
+
+            alice = try User.find(alice.requireID(), on: database).wait()!
+            bob = try User.find(bob.requireID(), on: database).wait()!
+
+            XCTAssertEqual(alice.names, ["al"])
+            XCTAssertEqual(bob.names, ["b", "a", "b", "c"])
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testPullAll() {
+        do {
+            let database = self.database
+
+            var alice = User(name: "Alice", age: 42, nicknames: [])
+            try alice.create(on: database).wait()
+            var bob = User(name: "Bob", age: 42, nicknames: ["a", "b", "c"])
+            try bob.create(on: database).wait()
+            var charlie = User(name: "Charlie", age: 42, nicknames: ["d", "e", "f", "e"])
+            try charlie.create(on: database).wait()
+
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == alice.requireID()).set(\.$nicknames, pullAll: ["al"]).update().wait())
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == bob.requireID()).set(\.$nicknames, pullAll: ["a", "b", "c"]).update().wait())
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == charlie.requireID()).set(\.$nicknames, pullAll: ["d", "e"]).update().wait())
+
+            alice = try User.find(alice.requireID(), on: database).wait()!
+            bob = try User.find(bob.requireID(), on: database).wait()!
+            charlie = try User.find(charlie.requireID(), on: database).wait()!
+
+            XCTAssertEqual(alice.nicknames, [])
+            XCTAssertEqual(bob.nicknames, [])
+            XCTAssertEqual(charlie.nicknames, ["f"])
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
     func testJoin() {
         do {
             let database = self.database
