@@ -131,26 +131,28 @@ class FluentMongoTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-//
-//    func testAddToSet() {
-//        do {
-//            let database = self.database
-//
-//            var alice = try User(name: "Alice", age: 42).create(on: database).wait()
-//            var bob = try User(name: "Bob", age: 42, nicknames: ["b"]).create(on: database).wait()
-//
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == alice.requireID()).update(\.$nicknames, addToSet: ["al"]).run().wait())
-//            XCTAssertNoThrow(try User.query(on: database).filter(\.$_id == bob.requireID()).update(\.$nicknames, addToSet: ["a", "b", "c"]).run().wait())
-//
-//            alice = try User.find(alice.requireID(), on: database).wait()!
-//            bob = try User.find(bob.requireID(), on: database).wait()!
-//
-//            XCTAssertEqual(alice.nicknames, ["al"])
-//            XCTAssertEqual(bob.nicknames, ["a", "b", "c"])
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//    }
+
+    func testAddToSet() {
+        do {
+            let database = self.database
+
+            var alice = User(name: "Alice", age: 42, nicknames: [])
+            try alice.create(on: database).wait()
+            var bob = User(name: "Bob", age: 42, nicknames: ["b"])
+            try bob.create(on: database).wait()
+
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == alice.requireID()).set(\.$nicknames, addToSet: ["al"]).update().wait())
+            XCTAssertNoThrow(try User.query(on: database).filter(\.$id == bob.requireID()).set(\.$nicknames, addToSet: ["a", "b", "c"]).update().wait())
+
+            alice = try User.find(alice.requireID(), on: database).wait()!
+            bob = try User.find(bob.requireID(), on: database).wait()!
+
+            XCTAssertEqual(alice.nicknames, ["al"])
+            XCTAssertEqual(bob.nicknames, ["a", "b", "c"])
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
 //
 //    func testPush() {
 //        do {
@@ -248,53 +250,51 @@ class FluentMongoTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-//
-//    func testDistinct() {
-//        do {
-//            let database = self.database
-//            _ = try User(name: "Alice", age: 20).save(on: database).wait()
-//            _ = try User(name: "Bob", age: 20).save(on: database).wait()
-//            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
-//            _ = try User(name: "Bob", age: 19).save(on: database).wait()
-//            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
-//
-//            XCTAssertEqual(try User.query(on: database).count().wait(), 5)
-//            XCTAssertEqual(try User.query(on: database).distinct().count().wait(), 5)
-//            XCTAssertEqual(try User.query(on: database).distinct().key(\.$name).count().wait(), 3)
-//            XCTAssertEqual(try User.query(on: database).distinct().key(\.$name).key(\.$age).count().wait(), 4)
-//            let users = try User.query(on: database).distinct().key(\.$name).all().wait().map { $0.name }
-//            XCTAssertEqual(users.count, 3)
-//            XCTAssertTrue(users.contains("Alice"))
-//            XCTAssertTrue(users.contains("Bob"))
-//            XCTAssertTrue(users.contains("Charlie"))
-//            let usersNameAge = try User.query(on: database).distinct().key(\.$name).key(\.$age).all().wait()
-//            XCTAssertEqual(usersNameAge.count, 4)
-//            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Alice" && $0.age == 20 }))
-//            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 20 }))
-//            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 19 }))
-//            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Charlie" && $0.age == 20 }))
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//    }
-//
-//    func testMigration() {
-//        do {
-//            let database = self.database
-//            try MongoDatabase.prepareMigrationMetadata(on: database).wait()
-//            _ = try User(name: "Alice", age: 20).save(on: database).wait()
-//            _ = try User(name: "Bob", age: 20).save(on: database).wait()
-//            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
-//            _ = try User(name: "Bob", age: 19).save(on: database).wait()
-//            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
-//
-//            try User.SetAgeMigration.prepare(on: database).wait()
-//            XCTAssertEqual(try User.query(on: database).filter(\.$age == 99).count().wait(), 5)
-//            try User.SetAgeMigration.revert(on: database).wait()
-//            XCTAssertEqual(try User.query(on: database).filter(\.$age == nil).count().wait(), 5)
-//            try MongoDatabase.revertMigrationMetadata(on: database).wait()
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//    }
+
+    func testDistinct() {
+        do {
+            let database = self.database
+            _ = try User(name: "Alice", age: 20).save(on: database).wait()
+            _ = try User(name: "Bob", age: 20).save(on: database).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
+            _ = try User(name: "Bob", age: 19).save(on: database).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
+
+            XCTAssertEqual(try User.query(on: database).count().wait(), 5)
+            XCTAssertEqual(try User.query(on: database).unique().count().wait(), 5)
+            XCTAssertEqual(try User.query(on: database).unique().field(\.$name).count().wait(), 3)
+            XCTAssertEqual(try User.query(on: database).unique().field(\.$name).field(\.$age).count().wait(), 4)
+            let users = try User.query(on: database).unique().field(\.$name).all().wait().map { $0.name }
+            XCTAssertEqual(users.count, 3)
+            XCTAssertTrue(users.contains("Alice"))
+            XCTAssertTrue(users.contains("Bob"))
+            XCTAssertTrue(users.contains("Charlie"))
+            let usersNameAge = try User.query(on: database).unique().field(\.$name).field(\.$age).all().wait()
+            XCTAssertEqual(usersNameAge.count, 4)
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Alice" && $0.age == 20 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 20 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Bob" && $0.age == 19 }))
+            XCTAssertTrue(usersNameAge.contains(where: { $0.name == "Charlie" && $0.age == 20 }))
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    func testMigration() {
+        do {
+            let database = self.database
+            _ = try User(name: "Alice", age: 20).save(on: database).wait()
+            _ = try User(name: "Bob", age: 20).save(on: database).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
+            _ = try User(name: "Bob", age: 19).save(on: database).wait()
+            _ = try User(name: "Charlie", age: 20).save(on: database).wait()
+
+            try User.SetAgeMigration().prepare(on: database).wait()
+            XCTAssertEqual(try User.query(on: database).filter(\.$age == 99).count().wait(), 5)
+            try User.SetAgeMigration().revert(on: database).wait()
+            XCTAssertEqual(try User.query(on: database).filter(\.$age == .null).count().wait(), 5)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
 }

@@ -65,13 +65,13 @@ extension User {
     class SetAgeMigration: Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            return User.query(on: database).set(\.$age, to: 99).run()
+            return User.query(on: database).set(\.$age, to: 99).update()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
             // TODO: https://github.com/vapor/fluent-kit/issues/284
-            //return User.query(on: database).set(\.$age, to: nil).run()
-            fatalError()
+            //return User.query(on: database).set(\.$age, to: nil).update()
+            return database.eventLoop.makeSucceededFuture(Void())
         }
     }
 }
