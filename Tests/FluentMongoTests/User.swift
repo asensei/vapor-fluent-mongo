@@ -69,7 +69,7 @@ extension User {
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            // TODO: Restore this
+            // TODO: https://github.com/vapor/fluent-kit/issues/284
             //return User.query(on: database).set(\.$age, to: nil).run()
             fatalError()
         }

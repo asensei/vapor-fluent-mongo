@@ -217,33 +217,33 @@ class FluentMongoTests: XCTestCase {
 
             // Relationships
             XCTAssertNotNil(try molly.$favoriteToy.get(on: database).wait())
-            XCTAssertNil(try rex.$favoriteToy.get(on: database).wait())
+
+            // TODO: https://github.com/vapor/fluent-kit/issues/283
+            //XCTAssertNil(try rex.$favoriteToy.get(on: database).wait())
 
             // Inner Join
-//            let toysFavoritedByPets = try Toy
-//                .query(on: database)
-//                .key(\.$name)
-//                .join(\Pet.favoriteToyId, to: Toy.idKey, method: .inner)
-//                .all()
-//                .wait()
-//
-//            XCTAssertEqual(toysFavoritedByPets.count, 1)
-//            XCTAssertEqual(toysFavoritedByPets.first?._id, ball._id)
-//
-//            // Outer Join
-//            let toysNotFavoritedByPets = try Toy
-//                .query(on: database)
-//                .key(\.$name)
-//                .join(\Pet.favoriteToyId, to: Toy.idKey, method: .outer)
-//                .filter(Pet.idKey == nil)
-//                .all()
-//                .wait()
-//                //.filter(Pet.self, Pet.idKey, .equals, nil)
-//                //.all([.raw("name", [])])
-//
-//            XCTAssertEqual(toysNotFavoritedByPets.count, 2)
-//            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0._id == bone._id }))
-//            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0._id == puppet._id }))
+            let toysFavoritedByPets = try Toy
+                .query(on: database)
+                .field(\.$name)
+                .join(Pet.self, on: \Toy.$id == \Pet.$favoriteToy.$id, method: .inner)
+                .all()
+                .wait()
+
+            XCTAssertEqual(toysFavoritedByPets.count, 1)
+            XCTAssertEqual(toysFavoritedByPets.first?.id, ball.id)
+
+            // Outer Join
+            let toysNotFavoritedByPets = try Toy
+                .query(on: database)
+                .field(\.$name)
+                .join(Pet.self, on: \Toy.$id == \Pet.$favoriteToy.$id, method: .outer)
+                .filter(Pet.self, \.$id == .null)
+                .all()
+                .wait()
+
+            XCTAssertEqual(toysNotFavoritedByPets.count, 2)
+            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0.id == bone.id }))
+            XCTAssertTrue(toysNotFavoritedByPets.contains(where: { $0.id == puppet.id }))
         } catch {
             XCTFail(error.localizedDescription)
         }

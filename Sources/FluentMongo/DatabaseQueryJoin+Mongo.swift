@@ -51,7 +51,7 @@ extension DatabaseQuery.Join {
 
 extension DatabaseQuery.Join.Method: Equatable {
 
-    public enum Mongo {
+    public enum Mongo: Equatable {
         case outer
     }
 
@@ -74,9 +74,10 @@ extension DatabaseQuery.Join.Method: Equatable {
     public static func ==(lhs: DatabaseQuery.Join.Method, rhs: DatabaseQuery.Join.Method) -> Bool {
         switch (lhs, rhs) {
         case (.left, .left),
-             (.inner, .inner),
-             (.outer, .outer):
+             (.inner, .inner):
             return true
+        case (.custom(let lhs as Mongo), .custom(let rhs as Mongo)):
+            return lhs == rhs
         default:
             return false
         }
