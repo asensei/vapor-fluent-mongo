@@ -39,6 +39,8 @@ struct MongoQueryConverter {
             future = self.delete(database, session, on: eventLoop)
         case .aggregate(let value):
             future = self.aggregate(value, database, session, on: eventLoop)
+        case .custom(let value as DatabaseQuery.Action.MongoIndex):
+            future = self.index(value, database, session, on: eventLoop)
         case .custom(let command as Document):
             future = self.custom(command, database, session, on: eventLoop)
         case .custom:
@@ -146,6 +148,21 @@ extension MongoQueryConverter {
 
     private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         return database.runCommand(command, session: session).map { [$0.databaseOutput(using: self.decoder)] }
+    }
+}
+
+extension MongoQueryConverter {
+
+    func index(_ action: DatabaseQuery.Action.MongoIndex, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+
+        let collection = database.collection(self.query.schema)
+
+        switch action {
+        case .create(let index):
+            return collection.createIndex(index).transform(to: [])
+        case .delete(let index):
+            return collection.dropIndex(index).transform(to: [])
+        }
     }
 }
 
