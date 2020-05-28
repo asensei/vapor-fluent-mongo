@@ -39,7 +39,7 @@ extension MongoSchemaConverter {
 
             return database.createCollection(self.schema.schema, options: options, session: session).flatMap { collection in
                 do {
-                    let indexModels = try self.schema.constraints.mongoIndexes()
+                    let indexModels = try self.schema.createConstraints.mongoIndexes()
                     guard !indexModels.isEmpty else {
                         return eventLoop.makeSucceededFuture(Void())
                     }

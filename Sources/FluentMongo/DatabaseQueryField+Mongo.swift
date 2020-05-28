@@ -108,6 +108,9 @@ extension FieldKey {
             return value
         case .aggregate:
             return "aggregate_result"
+        case .prefix(_, _):
+            // TODO: what?
+            fatalError()
         }
     }
 }

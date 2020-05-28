@@ -141,13 +141,18 @@ extension DatabaseSchema.Constraint {
 
     func mongoIndex() throws -> IndexModel? {
         switch self {
-        case .unique(let fields):
-            return .init(
-                keys: try fields.reduce(into: Document(), { document, field in
-                    try document[field.mongoKey()] = .init(DatabaseQuery.Sort.Direction.ascending.mongoSortDirection())
-                }),
-                options: .init(unique: true)
-            )
+        case .constraint(let alg, let name):
+            switch alg {
+            case .unique(let fields):
+                return .init(
+                    keys: try fields.reduce(into: Document(), { document, field in
+                        try document[field.mongoKey()] = .init(DatabaseQuery.Sort.Direction.ascending.mongoSortDirection())
+                    }),
+                    options: .init(name: name, unique: true)
+                )
+            default:
+                return nil
+            }
         default:
             return nil
         }

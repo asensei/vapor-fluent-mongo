@@ -17,6 +17,7 @@ extension Document {
 }
 
 private struct MongoDatabaseOutput: DatabaseOutput {
+
     let document: Document
     let decoder: BSONDecoder
     let schema: String?
@@ -43,20 +44,23 @@ private struct MongoDatabaseOutput: DatabaseOutput {
         return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema)
     }
 
-    func contains(_ path: [FieldKey]) -> Bool {
-        return self.document[path.mongoKeys] != nil
+    func nested(_ key: FieldKey) throws -> DatabaseOutput {
+        guard let document = self.document[key.mongoKey]?.documentValue else {
+            throw Error.invalidNestedDocument(key.mongoKey)
+        }
+
+        return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema)
     }
 
-    func decode<T: Decodable>(_ path: [FieldKey], as type: T.Type) throws -> T {
+    func contains(_ key: FieldKey) -> Bool {
+        return self.document[key.mongoKey] != nil
+    }
 
-        switch path.count {
-        case 1:
-            return try self.decoder.decode(type, from: self.document, forKey: path.mongoKeys.dotNotation)
-        default:
-            let value = self.document[path.mongoKeys] ?? .null
-            let document: Document = ["value": value]
+    func decodeNil(_ key: FieldKey) throws -> Bool {
+        return self.document[key.mongoKey] == .null
+    }
 
-            return try self.decoder.decode(type, from: document, forKey: "value")
-        }
+    func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T: Decodable {
+        return try self.decoder.decode(type, from: self.document, forKey: key.mongoKey)
     }
 }

@@ -48,6 +48,10 @@ struct FluentMongoDatabase: Database {
 
     let decoder: BSONDecoder
 
+    var inTransaction: Bool {
+        self.session != nil
+    }
+
     func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
         self.database.withConnection { connection in
             connection.execute({ database, eventLoop in

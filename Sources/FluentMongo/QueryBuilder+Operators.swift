@@ -16,7 +16,7 @@ extension QueryBuilder {
         _ method: DatabaseQuery.Filter.Method,
         _ value: Field.Value.Element
     ) -> Self
-        where Field: FieldProtocol, Field.Value: Collection, Field.Value.Element: Codable, Field.Model == Model
+        where Field: QueryableProperty, Field.Value: Collection, Field.Value.Element: Codable, Field.Model == Model
     {
         self.filter(Model.path(for: field), method, [value])
     }
@@ -24,7 +24,7 @@ extension QueryBuilder {
 
 public func ~~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Element) -> ModelValueFilter<Model>
     where Model: FluentKit.Model,
-        Field: FieldProtocol,
+        Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Codable
 {

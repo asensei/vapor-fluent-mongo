@@ -12,6 +12,7 @@ import MongoSwift
 
 public enum Error: Swift.Error, LocalizedError, CustomStringConvertible, DatabaseError {
     case duplicatedKey(String)
+    case invalidNestedDocument(String)
     case invalidResult
     case insertManyMismatch(Int, Int)
     case collectionNotFound(String)
@@ -35,6 +36,8 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible, Databas
         switch self {
         case .duplicatedKey(let message):
             return "Duplicated key. \(message)"
+        case .invalidNestedDocument(let key):
+            return "Invalid nested document for key \(key)"
         case .invalidResult:
             return "Query returned no results"
         case .insertManyMismatch(let count, let expected):
@@ -81,6 +84,7 @@ public enum Error: Swift.Error, LocalizedError, CustomStringConvertible, Databas
     public var isSyntaxError: Bool {
         switch self {
         case .duplicatedKey,
+             .invalidNestedDocument,
              .invalidResult,
              .insertManyMismatch:
             return false

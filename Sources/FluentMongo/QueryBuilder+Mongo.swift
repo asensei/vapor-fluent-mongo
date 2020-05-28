@@ -18,7 +18,7 @@ extension QueryBuilder {
         addToSet values: Field.Value
     ) -> Self
         where
-        Field: FieldProtocol,
+        Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
         Field.Model == Model
@@ -44,7 +44,7 @@ extension QueryBuilder {
         push values: Field.Value
     ) -> Self
         where
-        Field: FieldProtocol,
+        Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
         Field.Model == Model
@@ -70,7 +70,7 @@ extension QueryBuilder {
         pullAll values: Field.Value
     ) -> Self
         where
-        Field: FieldProtocol,
+        Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
         Field.Model == Model
