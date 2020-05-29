@@ -33,8 +33,8 @@ public final class IndexBuilder<Model: FluentKit.Model> {
 
 extension IndexBuilder {
 
-    public func key<Key: FieldProtocol>(_ key: KeyPath<Model, Key>, _ direction: SortDirection = .ascending) -> Self where Key.Model == Model {
-        return self.key(Model.path(for: key), direction)
+    public func key<Key: PropertyProtocol>(_ key: KeyPath<Model, Key>, _ direction: SortDirection = .ascending) -> Self where Key.Model == Model {
+        return self.key(Model.init()[keyPath: key].path, direction)
     }
 
     public func key(_ keyName: FieldKey, _ direction: SortDirection = .ascending) -> Self {

@@ -5,7 +5,6 @@ before_install:
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
   - export MONGO_DOCKER_IMAGE=mongo:4.2.6
   - export MONGO_BREW_VERSION=mongodb-community@4.2
-  - export MONGO_C_DRIVER=1.16.2
 
 stages:
 - name: test
@@ -24,13 +23,7 @@ jobs:
         - docker pull ${MONGO_DOCKER_IMAGE}
         - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
-            && apt-get -y install wget cmake
-            && wget https://github.com/mongodb/mongo-c-driver/releases/download/${MONGO_C_DRIVER}/mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
-            && tar xzf mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
-            && pushd mongo-c-driver-${MONGO_C_DRIVER}
-            && cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr
-            && make install
-            && popd
+            && apt-get -y install cmake libssl-dev libsasl2-dev
             && swift build --enable-test-discovery -c debug
             && swift build --enable-test-discovery -c release
             && swift test --enable-test-discovery -c debug --sanitize=thread";        
@@ -47,7 +40,6 @@ jobs:
         - brew tap mongodb/brew
         - brew install ${MONGO_BREW_VERSION}
         - brew services start ${MONGO_BREW_VERSION}
-        - brew install mongo-c-driver
         - brew outdated swiftlint || brew upgrade swiftlint
       script:
         - swift --version

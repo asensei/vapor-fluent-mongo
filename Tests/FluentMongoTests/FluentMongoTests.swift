@@ -33,15 +33,9 @@ class FluentMongoTests: XCTestCase {
         self.threadPool = NIOThreadPool(numberOfThreads: 1)
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
 
-        let configuration = try MongoConfiguration(
-            host: "localhost",
-            port: 27017,
-            database: "vapor_database"
-        )
+        try clearDatabase("vapor_database", on: self.eventLoopGroup)
 
-        try clearDatabase(configuration, on: self.eventLoopGroup)
-
-        try self.dbs.use(.mongo(connectionURL: configuration.connectionURL), as: .mongo)
+        try self.dbs.use(.mongo(database: "vapor_database"), as: .mongo)
     }
 
     override func tearDownWithError() throws {
