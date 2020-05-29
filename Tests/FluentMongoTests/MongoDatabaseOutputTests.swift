@@ -42,11 +42,10 @@ final class MongoDatabaseOutputTests: XCTestCase {
         )
         let output = document.databaseOutput(using: BSONDecoder())
 
-        XCTAssertTrue(output.contains(["key"]))
-        XCTAssertTrue(output.contains([.string("key")]))
-        XCTAssertTrue(output.contains([.id]))
-        XCTAssertTrue(output.contains([.aggregate]))
-        XCTAssertTrue(output.contains(["object1", "object2", "object3", "embeddedKey"]))
+        XCTAssertTrue(output.contains("key"))
+        XCTAssertTrue(output.contains(.string("key")))
+        XCTAssertTrue(output.contains(.id))
+        XCTAssertTrue(output.contains(.aggregate))
     }
 
     func testContainsFromSubscript() {
@@ -58,11 +57,10 @@ final class MongoDatabaseOutputTests: XCTestCase {
         document.object1 = BSON(dictionaryLiteral:("object2", BSON(dictionaryLiteral:("object3", BSON(dictionaryLiteral:("embeddedKey", "embeddedKey"))))))
         let output = document.databaseOutput(using: BSONDecoder())
 
-        XCTAssertTrue(output.contains(["key"]))
-        XCTAssertTrue(output.contains([.string("key")]))
-        XCTAssertTrue(output.contains([.id]))
-        XCTAssertTrue(output.contains([.aggregate]))
-        XCTAssertTrue(output.contains(["object1", "object2", "object3", "embeddedKey"]))
+        XCTAssertTrue(output.contains("key"))
+        XCTAssertTrue(output.contains(.string("key")))
+        XCTAssertTrue(output.contains(.id))
+        XCTAssertTrue(output.contains(.aggregate))
     }
 
     func testDecodeSimpleType() throws {
@@ -98,7 +96,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
         )
         let output = document.databaseOutput(using: BSONDecoder())
 
-        let simpleType: SimpleTestType = try output.decode(["object1", "object2", "object3"])
+        let simpleType: SimpleTestType = try output.decode("object1.object2.object3")
 
         XCTAssertEqual(simpleType.key, "value")
     }

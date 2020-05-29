@@ -37,6 +37,33 @@ extension QueryBuilder {
         return self
     }
 
+    /// Adds elements to an array only if they do not already exist in the set.
+    @discardableResult
+    public func set<Field>(
+        _ field: KeyPath<Model, Field>,
+        addToSet values: Field.Value.Wrapped
+    ) -> Self
+        where
+        Field: QueryableProperty,
+        Field.Value: OptionalType,
+        Field.Value.Wrapped: Collection,
+        Field.Value.Wrapped.Element: Encodable,
+        Field.Model == Model
+    {
+        if self.query.input.isEmpty {
+            self.query.input = [.dictionary([:])]
+        }
+
+        var existing = self.query.input[.addToSet] ?? [:]
+        existing[.string(Model.path(for: field).mongoKeys.dotNotation)] = .dictionary([
+            .string("$each"): .array(values.map { .bind($0) })
+        ])
+
+        self.query.input[.addToSet] = existing
+
+        return self
+    }
+
     /// Adds elements to an array.
     @discardableResult
     public func set<Field>(
@@ -63,6 +90,33 @@ extension QueryBuilder {
         return self
     }
 
+    /// Adds elements to an array.
+    @discardableResult
+    public func set<Field>(
+        _ field: KeyPath<Model, Field>,
+        push values: Field.Value.Wrapped
+    ) -> Self
+        where
+        Field: QueryableProperty,
+        Field.Value: OptionalType,
+        Field.Value.Wrapped: Collection,
+        Field.Value.Wrapped.Element: Encodable,
+        Field.Model == Model
+    {
+        if self.query.input.isEmpty {
+            self.query.input = [.dictionary([:])]
+        }
+
+        var existing = self.query.input[.push] ?? [:]
+        existing[.string(Model.path(for: field).mongoKeys.dotNotation)] = .dictionary([
+            .string("$each"): .array(values.map { .bind($0) })
+        ])
+
+        self.query.input[.push] = existing
+
+        return self
+    }
+
     /// Removes all matching values from an array.
     @discardableResult
     public func set<Field>(
@@ -73,6 +127,31 @@ extension QueryBuilder {
         Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
+        Field.Model == Model
+    {
+        if self.query.input.isEmpty {
+            self.query.input = [.dictionary([:])]
+        }
+
+        var existing = self.query.input[.pullAll] ?? [:]
+        existing[.string(Model.path(for: field).mongoKeys.dotNotation)] = .array(values.map { .bind($0) })
+
+        self.query.input[.pullAll] = existing
+
+        return self
+    }
+
+    /// Removes all matching values from an array.
+    @discardableResult
+    public func set<Field>(
+        _ field: KeyPath<Model, Field>,
+        pullAll values: Field.Value.Wrapped
+    ) -> Self
+        where
+        Field: QueryableProperty,
+        Field.Value: OptionalType,
+        Field.Value.Wrapped: Collection,
+        Field.Value.Wrapped.Element: Encodable,
         Field.Model == Model
     {
         if self.query.input.isEmpty {
