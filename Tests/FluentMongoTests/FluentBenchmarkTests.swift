@@ -37,15 +37,11 @@ final class FluentBenchmarkTests: XCTestCase {
         self.threadPool = NIOThreadPool(numberOfThreads: 1)
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
 
-        let configuration = try MongoConfiguration(
-            host: "localhost",
-            port: 27017,
-            database: "vapor_database"
-        )
+        try clearDatabase("vapor_database", on: self.eventLoopGroup)
+        try clearDatabase("vapor-migration-extra", on: self.eventLoopGroup)
 
-        try clearDatabase(configuration, on: self.eventLoopGroup)
-
-        try self.dbs.use(.mongo(connectionURL: configuration.connectionURL), as: .mongo)
+        try self.dbs.use(.mongo(database: "vapor_database"), as: .mongo)
+        try self.dbs.use(.mongo(database: "vapor-migration-extra"), as: .migrationExtra)
     }
 
     override func tearDownWithError() throws {
@@ -89,12 +85,12 @@ func env(_ name: String) -> String? {
     return ProcessInfo.processInfo.environment[name]
 }
 
-func clearDatabase(_ configuration: MongoConfiguration, on eventLoopGroup: EventLoopGroup) throws {
+func clearDatabase(_ name: String, on eventLoopGroup: EventLoopGroup) throws {
 
-    let client = try MongoClient(configuration.connectionURL.absoluteString, using: eventLoopGroup)
+    let client = try MongoClient("mongodb://localhost:27017/\(name)", using: eventLoopGroup)
 
     try client
-        .db(configuration.database)
+        .db(name)
         .drop()
         .wait()
 
@@ -109,3 +105,7 @@ let isLoggingConfigured: Bool = {
     }
     return true
 }()
+
+extension DatabaseID {
+    static let migrationExtra = DatabaseID(string: "migration-extra")
+}

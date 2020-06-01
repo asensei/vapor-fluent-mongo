@@ -37,7 +37,14 @@ extension MongoSchemaConverter {
             // TODO: re-enable once https://github.com/vapor/fluent-kit/issues/282 is fixed
             let options = try CreateCollectionOptions(validator: nil/*self.schema.createFields.mongoValidator()*/)
 
-            return database.createCollection(self.schema.schema, options: options, session: session).flatMap { collection in
+            return database.createCollection(self.schema.schema, options: options, session: session).flatMapErrorThrowing { error in
+                switch error {
+                case let error as CommandError where error.code == 48: // Collection already exists
+                    return database.collection(self.schema.schema)
+                default:
+                    throw error
+                }
+            }.flatMap { collection in
                 do {
                     let indexModels = try self.schema.createConstraints.mongoIndexes()
                     guard !indexModels.isEmpty else {
