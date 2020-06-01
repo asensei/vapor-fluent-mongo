@@ -34,8 +34,7 @@ extension MongoSchemaConverter {
 
     private func create(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
         do {
-            // TODO: re-enable once https://github.com/vapor/fluent-kit/issues/282 is fixed
-            let options = try CreateCollectionOptions(validator: nil/*self.schema.createFields.mongoValidator()*/)
+            let options = try CreateCollectionOptions(validator: self.schema.createFields.mongoValidator())
 
             return database.createCollection(self.schema.schema, options: options, session: session).flatMapErrorThrowing { error in
                 switch error {

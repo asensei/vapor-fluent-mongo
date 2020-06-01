@@ -14,7 +14,7 @@ extension DatabaseSchema.FieldDefinition {
     func mongoValidatorProperty() throws -> (key: String, value: Document, isRequired: Bool)? {
         switch self {
         case .definition(let name, let dataType, let constraints):
-            guard let mongoType = dataType.mongoType else {
+            guard let mongoType = dataType.mongoType(required: constraints.isRequired) else {
                 return nil
             }
 
@@ -74,7 +74,7 @@ extension DatabaseSchema.FieldUpdate {
     func mongoValidatorProperty() throws -> (key: String, value: Document)? {
         switch self {
         case .dataType(let name, let dataType):
-            guard let mongoType = dataType.mongoType else {
+            guard let mongoType = dataType.mongoType(required: false) else {
                 return nil
             }
 
@@ -168,32 +168,73 @@ extension Array where Element == DatabaseSchema.Constraint {
 
 extension DatabaseSchema.DataType {
 
-    var mongoType: Document? {
+    func mongoType(required: Bool) -> Document? {
+
+        guard let key = self.mongoTypeKey, var alias = self.mongoTypeAlias, !alias.isEmpty else {
+            return nil
+        }
+
+        if !required {
+            alias += ["null"]
+        }
+
+        switch alias.count {
+        case 1:
+            return [key: .string(alias[0])]
+        default:
+            return [key: .array(alias.map { .string($0) })]
+        }
+    }
+
+    var mongoTypeKey: String? {
+        switch self {
+        case .bool,
+             .custom(is Bool.Type),
+             .json,
+             .array,
+             .int8, .int16, .int32, .uint8, .uint16, .uint32,
+             .custom(is Int8.Type), .custom(is Int16.Type), .custom(is Int32.Type),
+             .custom(is UInt8.Type), .custom(is UInt16.Type), .custom(is UInt32.Type),
+             .int64, .uint64, .custom(is Int64.Type), .custom(is UInt64.Type),
+             .string, .custom(is String.Type),
+             .time, .date, .datetime, .custom(is Date.Type),
+             .float, .double, .custom(is Float.Type), .custom(is Double.Type),
+             .data, .custom(is Data.Type),
+             .uuid, .custom(is UUID.Type):
+            return "bsonType"
+        case .enum:
+            return "enum"
+        case .custom:
+            return nil
+        }
+    }
+
+    var mongoTypeAlias: [String]? {
         switch self {
         case .bool, .custom(is Bool.Type):
-            return ["bsonType": "bool"]
+            return ["bool"]
         case .json:
-            return ["bsonType": "object"]
+            return ["object"]
         case .array:
-            return ["bsonType": "array"]
+            return ["array"]
         case .int8, .int16, .int32, .uint8, .uint16, .uint32,
              .custom(is Int8.Type), .custom(is Int16.Type), .custom(is Int32.Type),
              .custom(is UInt8.Type), .custom(is UInt16.Type), .custom(is UInt32.Type):
-            return ["bsonType": "int"]
+            return ["int"]
         case .int64, .uint64, .custom(is Int64.Type), .custom(is UInt64.Type):
-            return ["bsonType": "long"]
+            return ["long"]
         case .string, .custom(is String.Type):
-            return ["bsonType": "string"]
+            return ["string"]
         case .time, .date, .datetime, .custom(is Date.Type):
-            return ["bsonType": "date"]
+            return ["date"]
         case .float, .double, .custom(is Float.Type), .custom(is Double.Type):
-            return ["bsonType": "double"]
+            return ["double"]
         case .data, .custom(is Data.Type):
-            return ["bsonType": "binData"]
+            return ["binData"]
         case .uuid, .custom(is UUID.Type):
-            return ["bsonType": "binData"]
+            return ["binData"]
         case .enum(let value):
-            return ["enum": .array(value.cases.map { .string($0) })]
+            return value.cases
         case .custom:
             return nil
         }
