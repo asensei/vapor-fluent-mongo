@@ -89,7 +89,6 @@ extension DatabaseQuery.Filter.Method {
         case .custom(let value as String):
             return value
         default:
-            #warning("TODO: implement this")
             throw Error.unsupportedOperator
         }
     }

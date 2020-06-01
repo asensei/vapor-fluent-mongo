@@ -80,27 +80,6 @@ final class MongoDatabaseOutputTests: XCTestCase {
         XCTAssertEqual(simpleType.key, "value")
     }
 
-    func testDecodeSimpleTypeEmbedded() throws {
-
-        let document = try Document(fromJSON: """
-            {
-                "object1": {
-                    "object2": {
-                        "object3": {
-                            "key": "value"
-                        }
-                    }
-                }
-            }
-            """
-        )
-        let output = document.databaseOutput(using: BSONDecoder())
-
-        let simpleType: SimpleTestType = try output.decode("object1.object2.object3")
-
-        XCTAssertEqual(simpleType.key, "value")
-    }
-
     func testMongoKey() {
 
         let elements: [FieldKey] = [.id, .aggregate, .string("a"), "b"]

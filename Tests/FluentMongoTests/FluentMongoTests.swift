@@ -33,9 +33,9 @@ class FluentMongoTests: XCTestCase {
         self.threadPool = NIOThreadPool(numberOfThreads: 1)
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
 
-        try clearDatabase("vapor_database", on: self.eventLoopGroup)
+        try clearDatabase("\(mongoConnectionString)/vapor_database", on: self.eventLoopGroup)
 
-        try self.dbs.use(.mongo(database: "vapor_database"), as: .mongo)
+        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor_database"), as: .mongo)
     }
 
     override func tearDownWithError() throws {
@@ -132,7 +132,8 @@ class FluentMongoTests: XCTestCase {
 
             let r4 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), ["a", "b"]).all().wait()
             XCTAssertEqual(r4.count, 2)
-            XCTAssertEqual(try User.query(on: database).filter(\.$nicknames ~~ ["a", "b"]).all().wait(), r4)
+            // TODO: https://github.com/vapor/fluent-kit/issues/289
+            // XCTAssertEqual(try User.query(on: database).filter(\.$nicknames ~~ ["a", "b"]).all().wait(), r4)
         } catch {
             XCTFail(error.localizedDescription)
         }
@@ -230,13 +231,12 @@ class FluentMongoTests: XCTestCase {
 
             // Relationships
             XCTAssertNotNil(try molly.$favoriteToy.get(on: database).wait())
-
-            // TODO: https://github.com/vapor/fluent-kit/issues/283
-            //XCTAssertNil(try rex.$favoriteToy.get(on: database).wait())
+            XCTAssertNil(try rex.$favoriteToy.get(on: database).wait())
 
             // Inner Join
             let toysFavoritedByPets = try Toy
                 .query(on: database)
+                .field(\.$id)
                 .field(\.$name)
                 .join(Pet.self, on: \Toy.$id == \Pet.$favoriteToy.$id, method: .inner)
                 .all()
@@ -248,6 +248,7 @@ class FluentMongoTests: XCTestCase {
             // Outer Join
             let toysNotFavoritedByPets = try Toy
                 .query(on: database)
+                .field(\.$id)
                 .field(\.$name)
                 .join(Pet.self, on: \Toy.$id == \Pet.$favoriteToy.$id, method: .outer)
                 .filter(Pet.self, \.$id == .null)
@@ -303,8 +304,7 @@ class FluentMongoTests: XCTestCase {
             try User.SetAgeMigration().prepare(on: database).wait()
             XCTAssertEqual(try User.query(on: database).filter(\.$age == 99).count().wait(), 5)
             try User.SetAgeMigration().revert(on: database).wait()
-            // TODO: https://github.com/vapor/fluent-kit/issues/284
-            //XCTAssertEqual(try User.query(on: database).filter(\.$age == .null).count().wait(), 5)
+            XCTAssertEqual(try User.query(on: database).filter(\.$age == nil).count().wait(), 5)
         } catch {
             XCTFail(error.localizedDescription)
         }

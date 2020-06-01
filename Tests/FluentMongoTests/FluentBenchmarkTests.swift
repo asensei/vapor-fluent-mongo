@@ -37,11 +37,11 @@ final class FluentBenchmarkTests: XCTestCase {
         self.threadPool = NIOThreadPool(numberOfThreads: 1)
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
 
-        try clearDatabase("vapor_database", on: self.eventLoopGroup)
-        try clearDatabase("vapor-migration-extra", on: self.eventLoopGroup)
+        try clearDatabase("\(mongoConnectionString)/vapor_database", on: self.eventLoopGroup)
+        try clearDatabase("\(mongoConnectionString)/vapor-migration-extra", on: self.eventLoopGroup)
 
-        try self.dbs.use(.mongo(database: "vapor_database"), as: .mongo)
-        try self.dbs.use(.mongo(database: "vapor-migration-extra"), as: .migrationExtra)
+        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor_database") , as: .mongo)
+        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor-migration-extra") , as: .migrationExtra)
     }
 
     override func tearDownWithError() throws {
@@ -85,12 +85,17 @@ func env(_ name: String) -> String? {
     return ProcessInfo.processInfo.environment[name]
 }
 
-func clearDatabase(_ name: String, on eventLoopGroup: EventLoopGroup) throws {
+let mongoConnectionString: String = {
+    "mongodb://localhost:27017"
+//    "mongodb://localhost:27001,localhost:27002,localhost:27003"
+}()
 
-    let client = try MongoClient("mongodb://localhost:27017/\(name)", using: eventLoopGroup)
+func clearDatabase(_ connectionString: String, on eventLoopGroup: EventLoopGroup) throws {
+
+    let client = try MongoClient(connectionString, using: eventLoopGroup)
 
     try client
-        .db(name)
+        .db(connectionString.components(separatedBy: "/").last ?? "")
         .drop()
         .wait()
 

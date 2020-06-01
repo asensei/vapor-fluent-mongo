@@ -61,7 +61,9 @@ extension Array where Element == DatabaseQuery.Field {
             return []
         }
 
-        projection["_id"] = true
+        if !projection.hasKey("_id") {
+            projection["_id"] = false
+        }
 
         return [["$project": .document(projection)]]
     }
@@ -108,9 +110,8 @@ extension FieldKey {
             return value
         case .aggregate:
             return "aggregate_result"
-        case .prefix(_, _):
-            // TODO: what?
-            fatalError()
+        case .prefix(let prefix, let key):
+            return prefix.mongoKey + key.mongoKey
         }
     }
 }

@@ -44,14 +44,6 @@ private struct MongoDatabaseOutput: DatabaseOutput {
         return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema)
     }
 
-    func nested(_ key: FieldKey) throws -> DatabaseOutput {
-        guard let document = self.document[key.mongoKey]?.documentValue else {
-            throw Error.invalidNestedDocument(key.mongoKey)
-        }
-
-        return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema)
-    }
-
     func contains(_ key: FieldKey) -> Bool {
         return self.document[key.mongoKey] != nil
     }
