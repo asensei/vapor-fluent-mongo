@@ -38,8 +38,8 @@ extension MongoSchemaConverter {
 
             return database.createCollection(self.schema.schema, options: options, session: session).flatMapErrorThrowing { error in
                 switch error {
-                case let error as CommandError where error.code == 48: // Collection already exists
-                    return database.collection(self.schema.schema)
+                case let error as CommandError where error.code == 48:
+                    return database.collection(self.schema.schema) // Collection already exists
                 default:
                     throw error
                 }

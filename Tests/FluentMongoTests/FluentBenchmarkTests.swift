@@ -40,8 +40,8 @@ final class FluentBenchmarkTests: XCTestCase {
         try clearDatabase("\(mongoConnectionString)/vapor_database", on: self.eventLoopGroup)
         try clearDatabase("\(mongoConnectionString)/vapor-migration-extra", on: self.eventLoopGroup)
 
-        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor_database") , as: .mongo)
-        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor-migration-extra") , as: .migrationExtra)
+        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor_database"), as: .mongo)
+        try self.dbs.use(.mongo(connectionString: "\(mongoConnectionString)/vapor-migration-extra"), as: .migrationExtra)
     }
 
     override func tearDownWithError() throws {
@@ -112,8 +112,10 @@ func env(_ name: String) -> String? {
 
 let mongoConnectionString: String = {
     #if os(Linux)
+
     return "mongodb://localhost:27001,localhost:27002,localhost:27003"
     #else
+
     return "mongodb://localhost:27017"
     #endif
 }()
@@ -134,6 +136,7 @@ let isLoggingConfigured: Bool = {
     LoggingSystem.bootstrap { label in
         var handler = StreamLogHandler.standardOutput(label: label)
         handler.logLevel = .debug
+
         return handler
     }
     return true

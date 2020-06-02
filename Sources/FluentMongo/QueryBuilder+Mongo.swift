@@ -21,8 +21,8 @@ extension QueryBuilder {
         Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }
@@ -48,8 +48,8 @@ extension QueryBuilder {
         Field.Value: OptionalType,
         Field.Value.Wrapped: Collection,
         Field.Value.Wrapped.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }
@@ -74,8 +74,8 @@ extension QueryBuilder {
         Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }
@@ -101,8 +101,8 @@ extension QueryBuilder {
         Field.Value: OptionalType,
         Field.Value.Wrapped: Collection,
         Field.Value.Wrapped.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }
@@ -127,8 +127,8 @@ extension QueryBuilder {
         Field: QueryableProperty,
         Field.Value: Collection,
         Field.Value.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }
@@ -152,8 +152,8 @@ extension QueryBuilder {
         Field.Value: OptionalType,
         Field.Value.Wrapped: Collection,
         Field.Value.Wrapped.Element: Encodable,
-        Field.Model == Model
-    {
+        Field.Model == Model {
+
         if self.query.input.isEmpty {
             self.query.input = [.dictionary([:])]
         }

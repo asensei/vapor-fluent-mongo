@@ -54,7 +54,7 @@ final class MongoDatabaseOutputTests: XCTestCase {
         document.key = "value"
         document._id = "abc123"
         document.aggregate_result = "abcd4567"
-        document.object1 = BSON(dictionaryLiteral:("object2", BSON(dictionaryLiteral:("object3", BSON(dictionaryLiteral:("embeddedKey", "embeddedKey"))))))
+        document.object1 = BSON(dictionaryLiteral: ("object2", BSON(dictionaryLiteral: ("object3", BSON(dictionaryLiteral: ("embeddedKey", "embeddedKey"))))))
         let output = document.databaseOutput(using: BSONDecoder())
 
         XCTAssertTrue(output.contains("key"))

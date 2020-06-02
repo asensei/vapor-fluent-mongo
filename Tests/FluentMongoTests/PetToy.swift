@@ -22,4 +22,3 @@ final class PetToy: Model {
     @Parent(key: "toyId")
     var toy: Toy
 }
-

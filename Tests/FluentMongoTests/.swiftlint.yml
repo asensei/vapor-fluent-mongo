@@ -1,0 +1,31 @@
+disabled_rules: # rule identifiers to exclude from running
+  - line_length
+  - identifier_name
+  - type_name
+  - large_tuple
+  - force_cast
+function_body_length: 50
+type_name:
+  max_length: 60
+type_body_length: 400
+file_length: 630
+nesting:
+  type_level: 2
+function_parameter_count: 6
+cyclomatic_complexity: 20
+included:
+  - Package.swift
+  - Sources
+  - Tests
+custom_rules:
+  vertical_whitespace_return:
+    includes: "*.swift"
+    name: "Space above Return"
+    regex: '\S[^{\s:|in]\n[\t ]+return'
+    message: "Vertical whitespace required above return statement."
+  vertical_whitespace_closing_braces:
+    includes: "*.swift"
+    regex: '\n[ \t]*\n[ \t]*[)}\]]'
+    name: "Vertical Whitespace before Closing Braces"
+    message: "Don't include vertical whitespace (empty line) before closing braces."
+    severity: warning

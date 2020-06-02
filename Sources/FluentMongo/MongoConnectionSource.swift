@@ -11,7 +11,7 @@ import AsyncKit
 import FluentKit
 
 struct MongoConnectionSource: ConnectionPoolSource {
-    
+
     // MARK: Initialization
 
     init(configuration: MongoConfiguration) {

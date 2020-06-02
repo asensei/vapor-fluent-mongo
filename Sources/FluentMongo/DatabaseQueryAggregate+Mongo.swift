@@ -150,7 +150,7 @@ extension DatabaseQuery.Aggregate.Method: Equatable {
         return .custom(MongoAccumulatorOperator.stdDevSamp)
     }
 
-    public static func ==(lhs: DatabaseQuery.Aggregate.Method, rhs: DatabaseQuery.Aggregate.Method) -> Bool {
+    public static func == (lhs: DatabaseQuery.Aggregate.Method, rhs: DatabaseQuery.Aggregate.Method) -> Bool {
         switch (lhs, rhs) {
         case (.count, .count),
              (.sum, .sum),

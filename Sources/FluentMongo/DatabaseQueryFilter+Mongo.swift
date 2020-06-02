@@ -49,18 +49,6 @@ extension Array where Element == DatabaseQuery.Filter {
             return []
         }
 
-        // TODO: Check this
-        //        // Apply
-        //
-        //        let filterByRemovingRootNamespace = filter.byRemovingKeysPrefix(query.schema)
-        //
-        //        switch query.filters {
-        //        case .some(let document):
-        //            query.filter = [query.defaultFilterRelation.rawValue: [document, filterByRemovingRootNamespace]]
-        //        case .none:
-        //            return filterByRemovingRootNamespace
-        //        }
-
         return [["$match": .document(group)]]
     }
 }

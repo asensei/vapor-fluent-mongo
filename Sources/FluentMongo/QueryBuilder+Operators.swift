@@ -15,9 +15,7 @@ extension QueryBuilder {
         _ field: KeyPath<Model, Field>,
         _ method: DatabaseQuery.Filter.Method,
         _ value: Field.Value.Element
-    ) -> Self
-        where Field: QueryableProperty, Field.Value: Collection, Field.Value.Element: Codable, Field.Model == Model
-    {
+    ) -> Self where Field: QueryableProperty, Field.Value: Collection, Field.Value.Element: Codable, Field.Model == Model {
         self.filter(Model.path(for: field), method, [value])
     }
 
@@ -26,9 +24,7 @@ extension QueryBuilder {
         _ field: KeyPath<Model, Field>,
         _ method: DatabaseQuery.Filter.Method,
         _ value: Field.Value.Wrapped.Element
-    ) -> Self
-        where Field: QueryableProperty, Field.Value: OptionalType, Field.Value.Wrapped: Collection, Field.Value.Wrapped.Element: Codable, Field.Model == Model
-    {
+    ) -> Self where Field: QueryableProperty, Field.Value: OptionalType, Field.Value.Wrapped: Collection, Field.Value.Wrapped.Element: Codable, Field.Model == Model {
         self.filter(Model.path(for: field), method, [value])
     }
 }
@@ -37,8 +33,7 @@ public func ~~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Eleme
     where Model: FluentKit.Model,
         Field: QueryableProperty,
         Field.Value: Collection,
-        Field.Value.Element: Codable
-{
+        Field.Value.Element: Codable {
     lhs ~~ .array([.bind(rhs)])
 }
 
@@ -47,8 +42,7 @@ public func ~~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Wrapp
         Field: QueryableProperty,
         Field.Value: OptionalType,
         Field.Value.Wrapped: Collection,
-        Field.Value.Wrapped.Element: Codable
-{
+        Field.Value.Wrapped.Element: Codable {
     lhs ~~ .array([.bind(rhs)])
 }
 
@@ -56,8 +50,7 @@ public func !~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Eleme
     where Model: FluentKit.Model,
         Field: QueryableProperty,
         Field.Value: Collection,
-        Field.Value.Element: Codable
-{
+        Field.Value.Element: Codable {
     lhs !~ .array([.bind(rhs)])
 }
 
@@ -66,7 +59,6 @@ public func !~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Wrapp
         Field: QueryableProperty,
         Field.Value: OptionalType,
         Field.Value.Wrapped: Collection,
-        Field.Value.Wrapped.Element: Codable
-{
+        Field.Value.Wrapped.Element: Codable {
     lhs !~ .array([.bind(rhs)])
 }

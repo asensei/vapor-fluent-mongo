@@ -19,7 +19,7 @@ struct MongoQueryConverter {
     }
 
     private let query: DatabaseQuery
-    
+
     private let encoder: BSONEncoder
 
     private let decoder: BSONDecoder
@@ -68,7 +68,7 @@ extension MongoQueryConverter {
         }
     }
 
-    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase,  _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func aggregate(_ aggregate: DatabaseQuery.Aggregate, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         let collection = database.collection(self.query.schema)
 
         do {
@@ -140,7 +140,7 @@ extension MongoQueryConverter {
         }
     }
 
-    private func delete(_ database: MongoSwift.MongoDatabase,  _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func delete(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         return self.filter(database, session, on: eventLoop).flatMap { filter in
             database.collection(self.query.schema).deleteMany(filter, session: session).transform(to: [])
         }

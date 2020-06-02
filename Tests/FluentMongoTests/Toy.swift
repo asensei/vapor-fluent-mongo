@@ -33,4 +33,3 @@ final class Toy: Model {
 
     init() { }
 }
-

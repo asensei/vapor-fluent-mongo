@@ -52,13 +52,13 @@ struct FluentMongoDatabase: Database {
         self.session != nil
     }
 
-    func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
+    func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
         self.database.withConnection { connection in
             connection.execute({ database, eventLoop in
                 MongoQueryConverter(query, encoder: self.encoder, decoder: self.decoder).convert(database, session: self.session, on: eventLoop)
-            }) { result in
+            }, { result in
                 onOutput(result)
-            }
+            })
         }
     }
 
