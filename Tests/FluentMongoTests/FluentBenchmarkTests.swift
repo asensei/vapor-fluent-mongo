@@ -71,7 +71,26 @@ final class FluentBenchmarkTests: XCTestCase {
     func testOptionalParent() throws { try self.benchmarker.testOptionalParent() }
     func testPagination() throws { try self.benchmarker.testPagination() }
     func testParent() throws { try self.benchmarker.testParent() }
-    func testPerformance() throws { try self.benchmarker.testPerformance() }
+    func testPerformance() throws {
+        // https://github.com/vapor/fluent-kit/issues/307
+        try self.db.schema("foos")
+            .field("id", .uuid, .identifier(auto: false))
+            .field("bar", .int, .required)
+            .field("baz", .double, .required)
+            .field("qux", .string, .required)
+            .field("quux", .datetime, .required)
+            .field("quuz", .float, .required)
+            .field("corge", .array(of: .int), .required)
+            .field("grault", .array(of: .double), .required)
+            .field("garply", .array(of: .string), .required)
+            .field("fred", .json, .required)
+            .field("plugh", .int)
+            .field("xyzzy", .double)
+            .field("thud", .json, .required)
+            .create()
+            .wait()
+        try self.benchmarker.testPerformance()
+    }
     func testRange() throws { try self.benchmarker.testRange() }
     func testSchema() throws { try self.benchmarker.testSchema() }
     func testSet() throws { try self.benchmarker.testSet() }
@@ -79,7 +98,11 @@ final class FluentBenchmarkTests: XCTestCase {
     func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
     func testSort() throws { try self.benchmarker.testSort() }
     func testTimestamp() throws { try self.benchmarker.testTimestamp() }
-//    func testTransaction() throws { try self.benchmarker.testTransaction() }
+    func testTransaction() throws {
+        #if os(Linux)
+        try self.benchmarker.testTransaction()
+        #endif
+    }
     func testUnique() throws { try self.benchmarker.testUnique() }
 }
 
@@ -88,8 +111,11 @@ func env(_ name: String) -> String? {
 }
 
 let mongoConnectionString: String = {
-    "mongodb://localhost:27017"
-//    "mongodb://localhost:27001,localhost:27002,localhost:27003"
+    #if os(Linux)
+    return "mongodb://localhost:27001,localhost:27002,localhost:27003"
+    #else
+    return "mongodb://localhost:27017"
+    #endif
 }()
 
 func clearDatabase(_ connectionString: String, on eventLoopGroup: EventLoopGroup) throws {
