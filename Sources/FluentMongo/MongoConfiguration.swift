@@ -9,7 +9,7 @@
 import Foundation
 import MongoSwift
 
-struct MongoConfiguration {
+public struct MongoConfiguration {
 
     // MARK: Accessing Attributes
 
