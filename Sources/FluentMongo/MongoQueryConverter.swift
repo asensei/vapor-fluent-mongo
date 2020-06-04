@@ -61,7 +61,7 @@ extension MongoQueryConverter {
             let pipeline = try self.aggregationPipeline()
 
             return collection.aggregate(pipeline, options: nil, session: session).flatMap { cursor in
-                cursor.toArray().mapEach { $0.databaseOutput(using: self.decoder) }
+                cursor.toArray().mapEach { $0.databaseOutput(fields: self.query.fields, using: self.decoder) }
             }
         } catch {
             return eventLoop.makeFailedFuture(error)
@@ -77,7 +77,7 @@ extension MongoQueryConverter {
             return collection.aggregate(pipeline, options: nil, session: session).flatMap { cursor in
                 cursor.toArray()
                     .flatMapThrowing { $0.isEmpty ? [try aggregate.mongoAggregationEmptyResult()] : $0 }
-                    .mapEach { $0.databaseOutput(using: self.decoder) }
+                    .mapEach { $0.databaseOutput(fields: self.query.fields, using: self.decoder) }
             }
         } catch {
             return eventLoop.makeFailedFuture(error)
@@ -99,7 +99,7 @@ extension MongoQueryConverter {
                 }
 
                 return result.insertedIds.map {
-                    Document(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(using: self.decoder)
+                    Document(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(fields: self.query.fields, using: self.decoder)
                 }
             }.flatMapErrorThrowing { error in
                 switch error {
@@ -140,7 +140,7 @@ extension MongoQueryConverter {
     }
 
     private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
-        return database.runCommand(command, session: session).map { [$0.databaseOutput(using: self.decoder)] }
+        return database.runCommand(command, session: session).map { [$0.databaseOutput(fields: self.query.fields, using: self.decoder)] }
     }
 }
 

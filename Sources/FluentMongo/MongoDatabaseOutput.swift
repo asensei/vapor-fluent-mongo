@@ -11,8 +11,8 @@ import FluentKit
 import MongoSwift
 
 extension Document {
-    func databaseOutput(using decoder: BSONDecoder) -> DatabaseOutput {
-        MongoDatabaseOutput(document: self, decoder: decoder, schema: nil)
+    func databaseOutput(fields: [DatabaseQuery.Field], using decoder: BSONDecoder) -> DatabaseOutput {
+        MongoDatabaseOutput(document: self, decoder: decoder, schema: nil, fields: fields)
     }
 }
 
@@ -21,56 +21,47 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     let document: Document
     let decoder: BSONDecoder
     let schema: String?
+    let fields: [DatabaseQuery.Field]
 
     var description: String {
         self.document.description
     }
 
     func schema(_ schema: String) -> DatabaseOutput {
-        return MongoDatabaseOutput(document: self.document, decoder: self.decoder, schema: schema)
-    }
 
-    func contains(_ key: FieldKey) -> Bool {
-        return self.namespace[key.mongoKey] != nil
-    }
+        let document: Document
 
-    func decodeNil(_ key: FieldKey) throws -> Bool {
-        return self.namespace[key.mongoKey] == .null
-    }
-
-    func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T: Decodable {
-        return try self.decoder.decode(type, from: self.namespace, forKey: key.mongoKey)
-    }
-
-    private var namespace: Document {
-        guard let schema = self.schema else {
-            return self.document
+        switch (self.schema, schema) {
+        case (.some(let lhs), let rhs):
+            if lhs == rhs {
+                document = self.document
+            } else {
+                document = self.document[schema]?.documentValue ?? Document()
+            }
+        case (.none, _):
+            document = self.document
         }
 
-        return self.document[schema]?.documentValue ?? self.document
-    }
-}
-
-private struct __MongoDatabaseOutput: DatabaseOutput {
-
-    let document: Document
-    let decoder: BSONDecoder
-    let schema: String?
-
-    var description: String {
-        self.document.description
-    }
-
-    func schema(_ schema: String) -> DatabaseOutput {
-        return MongoDatabaseOutput(document: self.document, decoder: self.decoder, schema: schema)
+        return MongoDatabaseOutput(document: document, decoder: self.decoder, schema: schema, fields: self.fields)
     }
 
     func contains(_ key: FieldKey) -> Bool {
-        return true
+        guard !self.document.hasKey(key.mongoKey) else {
+            return true
+        }
+
+        return self.fields.contains { field in
+            switch field {
+            case .path(let fieldKeys, let schema) where schema == self.schema:
+                return fieldKeys.mongoKeys.last == key.mongoKey
+            default:
+                return false
+            }
+        }
     }
 
     func decodeNil(_ key: FieldKey) throws -> Bool {
-        switch self.bson(key) {
+        switch self.document[key.mongoKey] {
         case .undefined, .null, .none:
             return true
         default:
@@ -79,29 +70,19 @@ private struct __MongoDatabaseOutput: DatabaseOutput {
     }
 
     func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T: Decodable {
+        guard self.document.hasKey(key.mongoKey) else {
+            switch T.self {
+            case is ExpressibleByNilLiteral.Type:
+                guard let result = (nil as Any?) as? T else {
+                    throw Error.invalidResult
+                }
 
-        let document = self.bson(key)?.documentValue ?? [:]
-
-//        guard document[key.mongoKey] != nil/*, !(type is ExpressibleByNilLiteral)*/ else {
-////            let anyNil: Any? = nil
-////
-////            return anyNil as! T
-//            switch T.self {
-//            case let t as ExpressibleByNilLiteral.Type:
-//                return t.init(nilLiteral: ()) as! T
-//            default:
-//                fatalError()
-//            }
-//        }
-
-        return try self.decoder.decode(type, from: document, forKey: key.mongoKey)
-    }
-
-    private func bson(_ key: FieldKey) -> BSON? {
-        guard let schema = self.schema else {
-            return self.document[key.mongoKey]
+                return result
+            default:
+                throw Error.unsupportedField
+            }
         }
 
-        return self.document[schema]?.documentValue?[key.mongoKey]
+        return try self.decoder.decode(type, from: self.document, forKey: key.mongoKey)
     }
 }

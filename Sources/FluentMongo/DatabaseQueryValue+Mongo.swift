@@ -16,9 +16,7 @@ extension DatabaseQuery.Value {
     }
 
     func mongoValueInsert(encoder: BSONEncoder) throws -> BSON? {
-        return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
-// TODO: uncomment to unset
-//        return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
+        return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
     }
 
     func mongoValueUpdate(encoder: BSONEncoder) throws -> BSON? {
@@ -38,9 +36,7 @@ extension DatabaseQuery.Value {
 
         func mongoValue(_ value: DatabaseQuery.Value, unset: Bool) throws -> BSON? {
             guard unset else {
-                return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
-// TODO: uncomment to unset
-//                return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
+                return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
             }
 
             switch value {
@@ -64,10 +60,10 @@ extension DatabaseQuery.Value {
         if let set = try mongoValue(self, unset: false)?.documentValue, !set.isEmpty {
             document["$set"] = .document(set)
         }
-// TODO: uncomment to unset
-//        if let unset = try mongoValue(self, unset: true)?.documentValue, !unset.isEmpty {
-//            document["$unset"] = .document(unset)
-//        }
+
+        if let unset = try mongoValue(self, unset: true)?.documentValue, !unset.isEmpty {
+            document["$unset"] = .document(unset)
+        }
 
         return document.isEmpty ? nil : .document(document)
     }
