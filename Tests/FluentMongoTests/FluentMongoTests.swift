@@ -143,7 +143,7 @@ class FluentMongoTests: XCTestCase {
         do {
             let database = self.database
 
-            var alice = User(name: "Alice", age: 42, nicknames: [])
+            var alice = User(name: "Alice", age: 42)
             try alice.create(on: database).wait()
             var bob = User(name: "Bob", age: 42, nicknames: ["b"])
             try bob.create(on: database).wait()
@@ -165,7 +165,7 @@ class FluentMongoTests: XCTestCase {
         do {
             let database = self.database
 
-            var alice = User(name: "Alice", age: 42, names: [])
+            var alice = User(name: "Alice", age: 42)
             try alice.create(on: database).wait()
             var bob = User(name: "Bob", age: 42, names: ["b"])
             try bob.create(on: database).wait()
@@ -187,7 +187,7 @@ class FluentMongoTests: XCTestCase {
         do {
             let database = self.database
 
-            var alice = User(name: "Alice", age: 42, nicknames: [])
+            var alice = User(name: "Alice", age: 42)
             try alice.create(on: database).wait()
             var bob = User(name: "Bob", age: 42, nicknames: ["a", "b", "c"])
             try bob.create(on: database).wait()
@@ -202,7 +202,7 @@ class FluentMongoTests: XCTestCase {
             bob = try User.find(bob.requireID(), on: database).wait()!
             charlie = try User.find(charlie.requireID(), on: database).wait()!
 
-            XCTAssertEqual(alice.nicknames, [])
+            XCTAssertNil(alice.nicknames)
             XCTAssertEqual(bob.nicknames, [])
             XCTAssertEqual(charlie.nicknames, ["f"])
         } catch {
