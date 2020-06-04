@@ -16,7 +16,9 @@ extension DatabaseQuery.Filter {
         case .value(let field, let method, let value):
             let key = try field.mongoKeyPath(namespace: field.schema != mainSchema)
             let mongoOperator = try method.mongoOperator()
-            let bsonValue = try value.mongoValue(encoder: encoder)
+            guard let bsonValue = try value.mongoValueFilter(encoder: encoder) else {
+                return nil
+            }
 
             return [key: [mongoOperator: bsonValue]]
         case .field(let lhs, let method, let rhs):

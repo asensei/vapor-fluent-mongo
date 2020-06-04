@@ -48,7 +48,7 @@ extension BSONEncoder {
 
 extension BSONDecoder {
 
-    public func decode<T: Decodable>(_ type: T.Type, from document: Document, forKey key: String) throws -> T {
+    func decode<T: Decodable>(_ type: T.Type, from document: Document, forKey key: String) throws -> T {
         let decoder = try self.decode(DecoderUnwrapper.self, from: document).decoder
         let container = try decoder.container(keyedBy: DecoderUnwrapperRowCodingKey.self)
 

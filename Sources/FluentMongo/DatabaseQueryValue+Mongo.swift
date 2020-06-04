@@ -11,23 +11,82 @@ import FluentKit
 
 extension DatabaseQuery.Value {
 
-    func mongoValue(encoder: BSONEncoder) throws -> BSON {
+    func mongoValueFilter(encoder: BSONEncoder) throws -> BSON? {
+        return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
+    }
 
-        if let updateOperatorValue = self.mongoUpdateArrayOperatorValue() {
-            return try Self.dictionary(updateOperatorValue).mongoValue(encoder: encoder)
+    func mongoValueInsert(encoder: BSONEncoder) throws -> BSON? {
+        return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
+// TODO: uncomment to unset
+//        return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
+    }
+
+    func mongoValueUpdate(encoder: BSONEncoder) throws -> BSON? {
+
+        // Special handling for custom array operators
+        for item in MongoUpdateArrayOperator.allCases {
+            guard let value = self.mongoUpdateArrayOperatorValue(item) else {
+                continue
+            }
+
+            guard let bson = try Self.dictionary(value).mongoValue(ignoreIfNil: false, encoder: encoder) else {
+                return nil
+            }
+
+            return [item.value: bson]
         }
 
+        func mongoValue(_ value: DatabaseQuery.Value, unset: Bool) throws -> BSON? {
+            guard unset else {
+                return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
+// TODO: uncomment to unset
+//                return try self.mongoValue(ignoreIfNil: true, encoder: encoder)
+            }
+
+            switch value {
+            case .bind(let optional as AnyOptionalType) where optional.wrappedValue == nil:
+                fallthrough
+            case .null:
+                return .null // The specified value in the $unset expression (i.e. null) does not impact the operation.
+            case .dictionary(let dict):
+                  return try .document(dict.reduce(into: Document()) { result, element in
+                    result[element.key.mongoKey] = try mongoValue(element.value, unset: unset)
+                })
+            case .array(let values):
+                return try .array(values.compactMap { try mongoValue($0, unset: unset) })
+            default:
+                return nil
+            }
+        }
+
+        var document: Document = [:]
+
+        if let set = try mongoValue(self, unset: false)?.documentValue, !set.isEmpty {
+            document["$set"] = .document(set)
+        }
+// TODO: uncomment to unset
+//        if let unset = try mongoValue(self, unset: true)?.documentValue, !unset.isEmpty {
+//            document["$unset"] = .document(unset)
+//        }
+
+        return document.isEmpty ? nil : .document(document)
+    }
+
+    private func mongoValue(ignoreIfNil: Bool, encoder: BSONEncoder) throws -> BSON? {
+
         switch self {
+        case .bind(let optional as AnyOptionalType) where optional.wrappedValue == nil:
+            fallthrough
+        case .null:
+            return ignoreIfNil ? nil : .null
         case .bind(let encodable):
             return try encoder.encode(encodable)
         case .dictionary(let dict):
             return try .document(dict.reduce(into: Document()) { result, element in
-                result[element.key.mongoKey] = try element.value.mongoValue(encoder: encoder)
+                result[element.key.mongoKey] = try element.value.mongoValue(ignoreIfNil: ignoreIfNil, encoder: encoder)
             })
         case .array(let values):
-            return try .array(values.map { try $0.mongoValue(encoder: encoder) })
-        case .null:
-            return .null
+            return try .array(values.compactMap { try $0.mongoValue(ignoreIfNil: ignoreIfNil, encoder: encoder) })
         case .enumCase(let value):
             return .string(value)
         case .`default`:
@@ -58,18 +117,6 @@ extension DatabaseQuery.Value {
         func databaseQueryValue(_ value: [FieldKey: DatabaseQuery.Value]? = nil) -> DatabaseQuery.Value {
             return .dictionary([self.fieldKey: .dictionary(value ?? [:])])
         }
-    }
-
-    var mongoUpdateOperator: String {
-        for item in MongoUpdateArrayOperator.allCases {
-            guard self.mongoUpdateArrayOperatorValue(item) != nil else {
-                continue
-            }
-
-            return item.value
-        }
-
-        return "$set"
     }
 
     func mongoUpdateArrayOperatorValue(_ identifier: MongoUpdateArrayOperator? = nil) -> [FieldKey: DatabaseQuery.Value]? {

@@ -86,7 +86,7 @@ extension MongoQueryConverter {
 
     private func insert(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
-            let documents = try self.query.input.compactMap { try $0.mongoValue(encoder: self.encoder).documentValue }
+            let documents = try self.query.input.compactMap { try $0.mongoValueInsert(encoder: self.encoder)?.documentValue }
             let collection = database.collection(self.query.schema)
 
             return collection.insertMany(documents, session: session).flatMapThrowing { result in
@@ -118,14 +118,7 @@ extension MongoQueryConverter {
 
     private func update(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
-            let documents: [Document] = try self.query.input.compactMap { input in
-                let bson = try input.mongoValue(encoder: self.encoder)
-                guard let document = bson.documentValue, !document.isEmpty else {
-                    return nil
-                }
-
-                return [input.mongoUpdateOperator: bson]
-            }
+            let documents: [Document] = try self.query.input.compactMap { try $0.mongoValueUpdate(encoder: self.encoder)?.documentValue }
 
             return self.filter(database, session, on: eventLoop).flatMap { filter in
                 let collection = database.collection(self.query.schema)
