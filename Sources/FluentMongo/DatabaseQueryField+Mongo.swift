@@ -31,6 +31,9 @@ extension Array where Element == DatabaseQuery.Field {
     func mongoDistinct(mainSchema: String) throws -> [Document] {
 
         var id = try self.reduce(into: Document()) { document, field in
+            guard field.schema == nil || field.schema == mainSchema else {
+                return
+            }
             let result = try field.mongoDistinct(mainSchema: mainSchema)
             document[result.key] = .string(result.value)
         }
