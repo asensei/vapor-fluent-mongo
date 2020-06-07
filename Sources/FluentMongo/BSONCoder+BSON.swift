@@ -49,10 +49,14 @@ extension BSONEncoder {
 extension BSONDecoder {
 
     func decode<T: Decodable>(_ type: T.Type, from document: Document, forKey key: String) throws -> T {
-        let decoder = try self.decode(DecoderUnwrapper.self, from: document).decoder
+        let decoder = try self.unwrap(from: document)
         let container = try decoder.container(keyedBy: DecoderUnwrapperRowCodingKey.self)
 
         return try container.decode(T.self, forKey: .init(key))
+    }
+
+    func unwrap(from document: Document = [:]) throws -> Decoder {
+        return try self.decode(DecoderUnwrapper.self, from: document).decoder
     }
 }
 

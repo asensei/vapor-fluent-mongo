@@ -65,7 +65,7 @@ private struct MongoDatabaseOutput: DatabaseOutput {
 
                 return result
             default:
-                throw Error.unsupportedField
+                return try T(from: self.decoder.unwrap())
             }
         }
 
