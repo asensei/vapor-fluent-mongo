@@ -3,7 +3,7 @@ language: generic
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:4.2.6
+  - export MONGO_DOCKER_IMAGE=mongo:4.2
   - export MONGO_BREW_VERSION=mongodb-community@4.2
 
 stages:
