@@ -7,32 +7,33 @@
 //
 
 import Foundation
-import Fluent
 import FluentMongo
 
-final class Pet: FluentMongoModel, Model {
+final class Pet: Model {
 
-    typealias Database = MongoDatabase
+    static let schema = "pets"
 
-    typealias ID = UUID
+    @ID(key: .id)
+    public var id: UUID?
 
-    var _id: UUID?
+    @Field(key: "name")
     var name: String
-    var age: Int?
-    var favoriteToyId: Toy.ID?
 
-    init(_id: UUID? = nil, name: String, age: Int? = nil, favoriteToyId: Toy.ID? = nil) {
-        self._id = _id
+    @OptionalField(key: "age")
+    var age: Int?
+
+    @OptionalParent(key: "favoriteToyId")
+    var favoriteToy: Toy?
+
+    @Siblings(through: PetToy.self, from: \.$pet, to: \.$toy)
+    var toys: [Toy]
+
+    init(id: UUID? = nil, name: String, age: Int? = nil, favoriteToyId: Toy.IDValue? = nil) {
+        self.id = id
         self.name = name
         self.age = age
-        self.favoriteToyId = favoriteToyId
+        self.$favoriteToy.id = favoriteToyId
     }
 
-    var favoriteToy: Parent<Pet, Toy>? {
-        return self.parent(\.favoriteToyId)
-    }
-
-    var toys: Siblings<Pet, Toy, PetToy> {
-        return self.siblings()
-    }
+    init() { }
 }

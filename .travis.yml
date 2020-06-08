@@ -3,9 +3,8 @@ language: generic
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:4.0.16
-  - export MONGO_BREW_VERSION=mongodb-community@4.0
-  - export MONGO_C_DRIVER=1.16.2
+  - export MONGO_DOCKER_IMAGE=mongo:4.2
+  - export MONGO_BREW_VERSION=mongodb-community@4.2
 
 stages:
 - name: test
@@ -22,24 +21,18 @@ jobs:
       script:
         - docker pull ${SWIFT_DOCKER_IMAGE}
         - docker pull ${MONGO_DOCKER_IMAGE}
-        - docker run -d -p 27017:27017 ${MONGO_DOCKER_IMAGE}
+        - docker run -d -p 27001:27001 -p 27002:27002 -p 27003:27003 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
-            && apt-get -y install wget cmake libssl-dev libsasl2-dev
-            && wget https://github.com/mongodb/mongo-c-driver/releases/download/${MONGO_C_DRIVER}/mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
-            && tar xzf mongo-c-driver-${MONGO_C_DRIVER}.tar.gz
-            && pushd mongo-c-driver-${MONGO_C_DRIVER}
-            && cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr
-            && make install
-            && popd
-            && swift build -c debug
-            && swift build -c release
-            && swift test -c debug --sanitize=thread --enable-test-discovery";        
+            && apt-get -y install cmake libssl-dev libsasl2-dev
+            && swift build --enable-test-discovery -c debug
+            && swift build --enable-test-discovery -c release
+            && swift test --enable-test-discovery -c debug --sanitize=thread";        
         - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
 
     - stage: test
       name: Unit Tests
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.5
       before_script:
         - gem install bundler
         - bundle install
@@ -47,7 +40,6 @@ jobs:
         - brew tap mongodb/brew
         - brew install ${MONGO_BREW_VERSION}
         - brew services start ${MONGO_BREW_VERSION}
-        - brew install mongo-c-driver
         - brew outdated swiftlint || brew upgrade swiftlint
       script:
         - swift --version

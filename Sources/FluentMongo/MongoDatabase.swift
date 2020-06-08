@@ -2,51 +2,111 @@
 //  MongoDatabase.swift
 //  FluentMongo
 //
-//  Created by Valerio Mazzeo on 30/11/2018.
-//  Copyright © 2018 Asensei Inc. All rights reserved.
+//  Created by Valerio Mazzeo on 14/05/2020.
+//  Copyright © 2020 Asensei Inc. All rights reserved.
 //
 
 import Foundation
-import Fluent
+import FluentKit
 import MongoSwift
 
-/// Creates connections to an identified Mongo database.
-public final class MongoDatabase: Database {
-    /// This database's configuration.
-    public let config: MongoDatabaseConfig
+protocol MongoDatabase {
 
-    private let threadPool: BlockingIOThreadPool
+    var eventLoop: EventLoop { get }
 
-    /// Creates a new `MongoDatabase`.
-    public init(config: MongoDatabaseConfig, threadPool: BlockingIOThreadPool) {
-        self.config = config
-        self.threadPool = threadPool
-    }
+    var logger: Logger { get }
 
-    /// See `Database`
-    public func newConnection(on worker: Worker) -> Future<MongoConnection> {
-        return MongoConnection.connect(
-            config: self.config,
-            threadPool: self.threadPool,
-            on: worker.eventLoop
-        )
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void>
+
+    func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+
+    func withSession<T>(_ closure: @escaping (ClientSession) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+
+    func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+}
+
+extension MongoDatabase {
+
+    func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>) -> EventLoopFuture<[DatabaseOutput]> {
+        var results: [DatabaseOutput] = []
+
+        return self.execute(closure) { result in
+            results.append(result)
+        }.map { results }
     }
 }
 
-extension MongoDatabase: BSONCoder {
+struct FluentMongoDatabase: Database {
 
-    public static var encoder: BSONEncoder = {
-        return BSONEncoder()
-    }()
+    let database: MongoDatabase
 
-    public static var decoder: BSONDecoder = {
-        return BSONDecoder()
-    }()
-}
+    let context: DatabaseContext
 
-extension DatabaseIdentifier {
-    /// Default identifier for `MongoDatabase`.
-    public static var mongo: DatabaseIdentifier<MongoDatabase> {
-        return .init("mongo")
+    let session: ClientSession?
+
+    let encoder: BSONEncoder
+
+    let decoder: BSONDecoder
+
+    var inTransaction: Bool {
+        self.session != nil
+    }
+
+    func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
+        self.database.withConnection { connection in
+            connection.execute({ database, eventLoop in
+                MongoQueryConverter(query, encoder: self.encoder, decoder: self.decoder).convert(database, session: self.session, on: eventLoop)
+            }, { result in
+                onOutput(result)
+            })
+        }
+    }
+
+    func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
+        self.database.withConnection { connection in
+            connection.execute { database, eventLoop in
+                MongoSchemaConverter(schema).convert(database, session: self.session, on: eventLoop)
+            }
+        }
+    }
+
+    func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
+        self.eventLoop.makeSucceededFuture(Void())
+    }
+
+    func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.database.withConnection { connection in
+            connection.withSession { session in
+                session.startTransaction().flatMap {
+                    let transactionDatabase = FluentMongoDatabase(
+                        database: connection,
+                        context: self.context,
+                        session: session,
+                        encoder: self.encoder,
+                        decoder: self.decoder
+                    )
+
+                    return closure(transactionDatabase)
+                        .flatMap { value in
+                            session.commitTransaction().map { value }
+                        }
+                        .flatMapError { error in
+                            session.abortTransaction().flatMapThrowing { throw error }
+                        }
+                }
+            }
+        }
+    }
+
+    func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.database.withConnection { connection in
+            closure(FluentMongoDatabase(
+                database: connection,
+                context: self.context,
+                session: nil,
+                encoder: self.encoder,
+                decoder: self.decoder
+            ))
+        }
     }
 }

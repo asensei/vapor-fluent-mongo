@@ -7,42 +7,52 @@
 //
 
 import Foundation
-import Fluent
 import FluentMongo
 
-final class User: FluentMongoModel, Model {
+final class User: Model {
 
-    //static let updatedAtKey: TimestampKey? = \.updatedAt
+    static let schema = "users"
 
-    typealias Database = MongoDatabase
+    @ID(key: .id)
+    var id: UUID?
 
-    typealias ID = UUID
-
-    var _id: UUID?
+    @Field(key: "name")
     var name: String
+
+    @OptionalField(key: "age")
     var age: Int?
+
+    @OptionalField(key: "names")
     var names: [String]?
+
+    @OptionalField(key: "nicknames")
     var nicknames: Set<String>?
+
+    @OptionalField(key: "updatedAt")
     var updatedAt: Date?
+
+    @OptionalField(key: "nested")
     var nested: Nested?
 
     struct Nested: Codable {
         let p1: String
     }
 
-    init(_id: UUID? = nil, name: String, age: Int? = nil, names: [String]? = nil, nicknames: Set<String>? = nil, nested: Nested? = nil) {
-        self._id = _id
+    init(id: UUID? = nil, name: String, age: Int? = nil, names: [String]? = nil, nicknames: Set<String>? = nil, nested: Nested? = nil) {
+        self.id = id
         self.name = name
         self.age = age
         self.names = names
         self.nicknames = nicknames
         self.nested = nested
     }
+
+    init() { }
 }
 
 extension User: Equatable {
     static func == (lhs: User, rhs: User) -> Bool {
-        guard let lhsId = lhs._id, let rhsId = rhs._id else {
+        guard let lhsId = lhs.id, let rhsId = rhs.id else {
             return false
         }
 
@@ -54,14 +64,12 @@ extension User {
 
     class SetAgeMigration: Migration {
 
-        typealias Database = MongoDatabase
-
-        static func prepare(on conn: Database.Connection) -> Future<Void> {
-            return User.query(on: conn).update(\.age, to: 99).run()
+        func prepare(on database: Database) -> EventLoopFuture<Void> {
+            return User.query(on: database).set(\.$age, to: 99).update()
         }
 
-        static func revert(on conn: Database.Connection) -> Future<Void> {
-            return User.query(on: conn).update(\.age, to: nil).run()
+        func revert(on database: Database) -> EventLoopFuture<Void> {
+            return User.query(on: database).set(\.$age, to: nil).update()
         }
     }
 }

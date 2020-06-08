@@ -2,281 +2,115 @@
 //  MongoConnection.swift
 //  FluentMongo
 //
-//  Created by Valerio Mazzeo on 30/11/2018.
-//  Copyright © 2018 Asensei Inc. All rights reserved.
+//  Created by Valerio Mazzeo on 21/10/2019.
+//  Copyright © 2019 Asensei Inc. All rights reserved.
 //
 
 import Foundation
-import NIO
+import AsyncKit
 import MongoSwift
-import Fluent
 
-/// A Mongo frontend client.
-public final class MongoConnection: BasicWorker, DatabaseConnection, DatabaseQueryable {
+final class MongoConnection: ConnectionPoolItem, MongoDatabase {
 
-    public required init(
+    public static func connect(
+        to connectionString: String,
+        database: String,
+        options: ClientOptions? = nil,
+        logger: Logger = .init(label: "vapor.fluent.mongo.connection"),
+        on eventLoop: EventLoop
+    ) -> EventLoopFuture<MongoConnection> {
+
+        let promise = eventLoop.makePromise(of: MongoConnection.self)
+
+        do {
+            let connection = MongoConnection(
+                client: try MongoClient(connectionString, using: eventLoop, options: options),
+                database: database,
+                logger: logger,
+                on: eventLoop
+            )
+
+            logger.debug("Connected to mongo db: \(database)")
+            promise.succeed(connection)
+        } catch {
+            logger.error("Failed to connect to mongo db: \(database). \(error.localizedDescription)")
+            promise.fail(error)
+        }
+
+        return promise.futureResult
+    }
+
+    // MARK: Initialization
+
+    init(
         client: MongoClient,
         database: String,
-        threadPool: BlockingIOThreadPool,
-        logger: DatabaseLogger? = nil,
+        logger: Logger,
         on eventLoop: EventLoop
     ) {
         self.client = client
         self.database = database
-        self.threadPool = threadPool
-        self.eventLoop = eventLoop
-        self.isClosed = false
         self.logger = logger
+        self.eventLoop = eventLoop
     }
+
+    // MARK: Accessing Attributes
 
     public let database: String
 
     public let eventLoop: EventLoop
 
+    // MARK: Managing Connection
+
     private let client: MongoClient
 
-    private let threadPool: BlockingIOThreadPool
+    let logger: Logger
 
-    /// If non-nil, will log queries.
-    public var logger: DatabaseLogger?
+    // MARK: ConnectionPoolItem
 
-    /// See `Extendable`.
-    public var extend: Extend = [:]
+    public private(set) var isClosed: Bool = false
 
-    /// See `DatabaseConnection`.
-    public typealias Database = MongoDatabase
-
-    public private(set)var isClosed: Bool
-
-    /// Closes the `DatabaseConnection`.
-    public func close() {
-        self.isClosed = true
-    }
-
-    /// See `DatabaseQueryable`.
-
-    public func query(_ query: Database.Query, _ handler: @escaping (Database.Output) throws -> Void) -> Future<Void> {
-
-        let promise = self.eventLoop.newPromise(of: Void.self)
-        self.threadPool.submit { _ in
-
-            var callbacks: [EventLoopFuture<Void>] = []
-            self.logger?.record(query: String(describing: query))
-            let database = self.client.db(self.database)
-            let collection = database.collection(query.collection)
-
-            do {
-                switch query.action {
-                case .insert:
-                    guard let document = query.data else {
-                        throw Error.invalidQuery(query)
-                    }
-                    if let result = try collection.insertOne(document) {
-                        self.logger?.record(query: String(describing: result))
-                    }
-                case .find:
-                    let cursor = try collection.aggregate(query.aggregationPipeline(), options: query.aggregateOptions)
-                    cursor.forEach { document in
-                        let callback = self.eventLoop.submit {
-                            try handler(document)
-                        }
-                        callbacks.append(callback)
-                    }
-                    // Running `count` in an aggregation pipeline produce a `nil` document when the provided filter does not match any. Therefore we have to manually set the count to `0`.
-                    if let aggregate = query.keys.computed.first?.aggregate, callbacks.count == 0 {
-                        var callback: EventLoopFuture<Void>?
-                        switch aggregate {
-                        case .count:
-                            callback = self.eventLoop.submit {
-                                try handler([FluentMongoQuery.defaultAggregateField: 0])
-                            }
-                        case .group:
-                            callback = self.eventLoop.submit {
-                                try handler([FluentMongoQuery.defaultAggregateField: .null])
-                            }
-                        }
-                        callback.map { callbacks.append($0) }
-                    }
-                case .update:
-                    switch (query.data, query.partialData != nil || query.partialCustomData != nil) {
-                    case (.none, true):
-                        var document = query.partialCustomData ?? Document()
-                        document["$set"] = query.partialData.map { .document($0) }
-                        if let result = try collection.updateMany(filter: self.filter(query, collection), update: document) {
-                            self.logger?.record(query: String(describing: result))
-                        }
-                    case (.some(let data), false):
-                        if let result = try collection.replaceOne(filter: self.filter(query, collection), replacement: data) {
-                            self.logger?.record(query: String(describing: result))
-                        }
-                    default:
-                        throw Error.invalidQuery(query)
-                    }
-                case .delete:
-                    if let result = try collection.deleteMany(self.filter(query, collection)) {
-                        self.logger?.record(query: String(describing: result))
-                    }
-                }
-
-                if callbacks.isEmpty {
-                    promise.succeed()
-                } else {
-                    EventLoopFuture<Void>.andAll(callbacks, eventLoop: self.eventLoop).cascade(promise: promise)
-                }
-            } catch let error as ServerError {
-                switch error {
-                case .writeError(let writeError, let writeConcernError, _) where writeError?.code == 11000 || writeConcernError?.code == 11000:
-                    return promise.fail(error: Error.duplicatedKey(error.errorDescription ?? "No error description available."))
-                default:
-                    return promise.fail(error: Error.underlyingDriverError(error))
-                }
-            } catch {
-                return promise.fail(error: Error.underlyingDriverError(error))
+    public func close() -> EventLoopFuture<Void> {
+        self.client.close().always { result in
+            switch result {
+            case .success:
+                self.isClosed = true
+            default:
+                break
             }
         }
-
-        return promise.futureResult
     }
 
-    private func filter(_ query: Database.Query, _ collection: MongoCollection<Document>) throws -> FluentMongoQueryFilter {
+    // MARK: MongoDatabase
 
-        guard let filter = query.filter, !filter.isEmpty else {
-            return [:]
-        }
+    public func execute(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<[DatabaseOutput]>, _ onOutput: @escaping (DatabaseOutput) -> Void) -> EventLoopFuture<Void> {
 
-        var pipeline = query.aggregationPipeline()
-        pipeline.append(["$project": ["_id": true]])
-        let cursor = try collection.aggregate(pipeline)
-        let identifiers = cursor.compactMap { $0["_id"] }
+        let database = self.client.db(self.database)
 
-        return ["_id": ["$in": .array(identifiers)]]
-    }
-
-    deinit {
-        self.close()
-    }
-}
-
-// MARK: - Internal Indexing Helpers
-
-extension MongoConnection {
-
-    func createIndex(_ index: IndexModel, in collection: String) -> Future<Void> {
-
-        let promise = self.eventLoop.newPromise(of: Void.self)
-
-        self.threadPool.submit { _ in
-            do {
-                guard !index.keys.isEmpty else {
-                    throw IndexBuilderError.invalidKeys
-                }
-
-                self.logger?.record(query: "MongoConnection.createIndex")
-                let database = self.client.db(self.database)
-                self.logger?.record(query: "Create index on \(collection)")
-                _ = try database.collection(collection).createIndex(index)
-
-                return promise.succeed()
-            } catch {
-                return promise.fail(error: error)
+        return closure(database, self.eventLoop).map { results in
+            guard !results.isEmpty else {
+                return
             }
-        }
 
-        return promise.futureResult
+            for result in results {
+                onOutput(result)
+            }
+
+            return
+        }
     }
 
-    func dropIndex(_ index: IndexModel, in collection: String) -> Future<Void> {
-
-        let promise = self.eventLoop.newPromise(of: Void.self)
-
-        self.threadPool.submit { _ in
-            do {
-                guard !index.keys.isEmpty else {
-                    throw IndexBuilderError.invalidKeys
-                }
-
-                self.logger?.record(query: "MongoConnection.dropIndex")
-                let database = self.client.db(self.database)
-                self.logger?.record(query: "Drop index on \(collection)")
-                _ = try database.collection(collection).dropIndex(index)
-
-                return promise.succeed()
-            } catch {
-                return promise.fail(error: error)
-            }
-        }
-
-        return promise.futureResult
-    }
-}
-
-// MARK: - Internal MigrationSupporting Helpers
-
-extension MongoConnection {
-
-    func prepareMigrationMetadata() -> Future<Void> {
-
-        let promise = self.eventLoop.newPromise(of: Void.self)
-
-        self.threadPool.submit { _ in
-            do {
-                self.logger?.record(query: "MongoConnection.prepareMigrationMetadata")
-                let database = self.client.db(self.database)
-                let collection = MigrationLog<MongoDatabase>.entity
-                let collections = try database.listCollections(["name": .string(collection)])
-                if collections.contains(where: { $0.name == collection }) {
-                    self.logger?.record(query: "Collection \"\(collection)\" already exists. Skipping creation.")
-                } else {
-                    self.logger?.record(query: "Create collection: \(collection)")
-                    _ = try database.createCollection(collection)
-                }
-
-                return promise.succeed()
-            } catch {
-                return promise.fail(error: error)
-            }
-        }
-
-        return promise.futureResult
+    public func execute<T>(_ closure: @escaping (MongoSwift.MongoDatabase, EventLoop) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        closure(self.client.db(self.database), self.eventLoop)
     }
 
-    func revertMigrationMetadata() -> Future<Void> {
-
-        let promise = self.eventLoop.newPromise(of: Void.self)
-
-        self.threadPool.submit { _ in
-            do {
-                self.logger?.record(query: "MongoConnection.revertMigrationMetadata")
-                let database = self.client.db(self.database)
-                let collection = MigrationLog<MongoDatabase>.entity
-                self.logger?.record(query: "Drop collection: \(collection)")
-                _ = try database.collection(collection).drop()
-
-                return promise.succeed()
-            } catch {
-                return promise.fail(error: error)
-            }
+    public func withSession<T>(_ closure: @escaping (ClientSession) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.client.withSession { session in
+            closure(session)
         }
-
-        return promise.futureResult
     }
-}
 
-extension MongoConnection {
-    public enum Error: Swift.Error {
-        case invalidQuery(Database.Query)
-        case duplicatedKey(String)
-        case underlyingDriverError(Swift.Error)
-
-        var localizedDescription: String {
-            switch self {
-            case .invalidQuery(let query):
-                return "Invalid query. \(String(describing: query))"
-            case .duplicatedKey(let message):
-                return "Duplicated key. \(message)"
-            case .underlyingDriverError(let error):
-                return error.localizedDescription
-            }
-        }
+    public func withConnection<T>(_ closure: @escaping (MongoConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        closure(self)
     }
 }

@@ -7,130 +7,58 @@
 //
 
 import Foundation
-import Fluent
+import FluentKit
 
-extension QueryBuilder where Database == MongoDatabase {
+extension QueryBuilder {
+    @discardableResult
+    public func filter<Field>(
+        _ field: KeyPath<Model, Field>,
+        _ method: DatabaseQuery.Filter.Method,
+        _ value: Field.Value.Element
+    ) -> Self where Field: QueryableProperty, Field.Value: Collection, Field.Value.Element: Codable, Field.Model == Model {
+        self.filter(Model.path(for: field), method, [value])
+    }
 
     @discardableResult
-    public func filter(_ value: FluentMongoFilterOperator<Database, Result>) -> Self {
-        return self.filter(custom: value.filter)
+    public func filter<Field>(
+        _ field: KeyPath<Model, Field>,
+        _ method: DatabaseQuery.Filter.Method,
+        _ value: Field.Value.Wrapped.Element
+    ) -> Self where Field: QueryableProperty, Field.Value: OptionalType, Field.Value.Wrapped: Collection, Field.Value.Wrapped.Element: Codable, Field.Model == Model {
+        self.filter(Model.path(for: field), method, [value])
     }
-
-    @discardableResult
-    public func filter<A>(_ value: FluentMongoFilterOperator<Database, A>) -> Self {
-        return self.filter(custom: value.filter)
-    }
 }
 
-public func ~~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C>, rhs: C.Element) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodInSubset, rhs)
+public func ~~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Element) -> ModelValueFilter<Model>
+    where Model: FluentKit.Model,
+        Field: QueryableProperty,
+        Field.Value: Collection,
+        Field.Value.Element: Codable {
+    lhs ~~ .array([.bind(rhs)])
 }
 
-public func ~~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C?>, rhs: C.Element) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodInSubset, rhs)
+public func ~~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Wrapped.Element) -> ModelValueFilter<Model>
+    where Model: FluentKit.Model,
+        Field: QueryableProperty,
+        Field.Value: OptionalType,
+        Field.Value.Wrapped: Collection,
+        Field.Value.Wrapped.Element: Codable {
+    lhs ~~ .array([.bind(rhs)])
 }
 
-public func ~~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C>, rhs: C) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodInSubset, rhs)
+public func !~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Element) -> ModelValueFilter<Model>
+    where Model: FluentKit.Model,
+        Field: QueryableProperty,
+        Field.Value: Collection,
+        Field.Value.Element: Codable {
+    lhs !~ .array([.bind(rhs)])
 }
 
-public func ~~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C?>, rhs: C) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodInSubset, rhs)
-}
-
-public func !~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C>, rhs: C.Element) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodNotInSubset, rhs)
-}
-
-public func !~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C?>, rhs: C.Element) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodNotInSubset, rhs)
-}
-
-public func !~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C>, rhs: C) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodNotInSubset, rhs)
-}
-
-public func !~ <Database, Result, C: Collection>(lhs: KeyPath<Result, C?>, rhs: C) -> FluentMongoFilterOperator<Database, Result>
-    where C: Encodable, C.Element: Encodable
-{
-    return FluentMongoFilterOperator.make(lhs, Database.queryFilterMethodNotInSubset, rhs)
-}
-
-public struct FluentMongoFilterOperator<Database, Result> where Database: QuerySupporting {
-    /// The wrapped query filter method.
-    fileprivate let filter: Database.QueryFilter
-
-    /// Operator helper func.
-    fileprivate static func make<C: Collection>(_ key: KeyPath<Result, C>, _ method: Database.QueryFilterMethod, _ value: C.Element) -> FluentMongoFilterOperator<Database, Result>
-        where C: Encodable, C.Element: Encodable
-    {
-        if value.isNil {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValueNil)
-            )
-        } else {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValue([value]))
-            )
-        }
-    }
-
-    /// Operator helper func.
-    fileprivate static func make<C: Collection>(_ key: KeyPath<Result, C?>, _ method: Database.QueryFilterMethod, _ value: C.Element) -> FluentMongoFilterOperator<Database, Result>
-        where C: Encodable, C.Element: Encodable
-    {
-        if value.isNil {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValueNil)
-            )
-        } else {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValue([value]))
-            )
-        }
-    }
-
-    /// Operator helper func.
-    fileprivate static func make<C: Collection>(_ key: KeyPath<Result, C>, _ method: Database.QueryFilterMethod, _ value: C) -> FluentMongoFilterOperator<Database, Result>
-        where C: Encodable, C.Element: Encodable
-    {
-        if value.count == 1, let value = value.first, value.isNil {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValueNil)
-            )
-        } else {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValue(Array(value)))
-            )
-        }
-    }
-
-    /// Operator helper func.
-    fileprivate static func make<C: Collection>(_ key: KeyPath<Result, C?>, _ method: Database.QueryFilterMethod, _ value: C) -> FluentMongoFilterOperator<Database, Result>
-        where C: Encodable, C.Element: Encodable
-    {
-        if value.count == 1, let value = value.first, value.isNil {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValueNil)
-            )
-        } else {
-            return FluentMongoFilterOperator<Database, Result>(
-                filter: Database.queryFilter(Database.queryField(.keyPath(key)), method, Database.queryFilterValue(Array(value)))
-            )
-        }
-    }
+public func !~ <Model, Field>(lhs: KeyPath<Model, Field>, rhs: Field.Value.Wrapped.Element) -> ModelValueFilter<Model>
+    where Model: FluentKit.Model,
+        Field: QueryableProperty,
+        Field.Value: OptionalType,
+        Field.Value.Wrapped: Collection,
+        Field.Value.Wrapped.Element: Codable {
+    lhs !~ .array([.bind(rhs)])
 }
