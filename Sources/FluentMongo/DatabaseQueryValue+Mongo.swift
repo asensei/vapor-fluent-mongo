@@ -45,7 +45,7 @@ extension DatabaseQuery.Value {
             case .null:
                 return .null // The specified value in the $unset expression (i.e. null) does not impact the operation.
             case .dictionary(let dict):
-                  return try .document(dict.reduce(into: Document()) { result, element in
+                  return try .document(dict.reduce(into: BSONDocument()) { result, element in
                     result[element.key.mongoKey] = try mongoValue(element.value, unset: unset)
                 })
             case .array(let values):
@@ -55,7 +55,7 @@ extension DatabaseQuery.Value {
             }
         }
 
-        var document: Document = [:]
+        var document: BSONDocument = [:]
 
         if let set = try mongoValue(self, unset: false)?.documentValue, !set.isEmpty {
             document["$set"] = .document(set)
@@ -78,7 +78,7 @@ extension DatabaseQuery.Value {
         case .bind(let encodable):
             return try encoder.encode(encodable)
         case .dictionary(let dict):
-            return try .document(dict.reduce(into: Document()) { result, element in
+            return try .document(dict.reduce(into: BSONDocument()) { result, element in
                 result[element.key.mongoKey] = try element.value.mongoValue(ignoreIfNil: ignoreIfNil, encoder: encoder)
             })
         case .array(let values):

@@ -11,7 +11,7 @@ import FluentKit
 
 extension DatabaseQuery.Aggregate {
 
-    func mongoAggregate(mainSchema: String) throws -> [Document] {
+    func mongoAggregate(mainSchema: String) throws -> [BSONDocument] {
         switch self {
         case .field(let field, let method):
             switch method {
@@ -32,7 +32,7 @@ extension DatabaseQuery.Aggregate {
         }
     }
 
-    func mongoAggregationEmptyResult() throws -> Document {
+    func mongoAggregationEmptyResult() throws -> BSONDocument {
         switch self {
         case .field(_, let method):
             switch method {

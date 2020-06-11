@@ -14,7 +14,7 @@ extension BSONEncoder {
     public func encode(_ value: Encodable) throws -> BSON {
 
         let wrappedDataKey = "value"
-        let document: Document
+        let document: BSONDocument
 
         switch value {
         case let value as Data:
@@ -48,14 +48,14 @@ extension BSONEncoder {
 
 extension BSONDecoder {
 
-    func decode<T: Decodable>(_ type: T.Type, from document: Document, forKey key: String) throws -> T {
+    func decode<T: Decodable>(_ type: T.Type, from document: BSONDocument, forKey key: String) throws -> T {
         let decoder = try self.unwrap(from: document)
         let container = try decoder.container(keyedBy: DecoderUnwrapperRowCodingKey.self)
 
         return try container.decode(T.self, forKey: .init(key))
     }
 
-    func unwrap(from document: Document = [:]) throws -> Decoder {
+    func unwrap(from document: BSONDocument = [:]) throws -> Decoder {
         return try self.decode(DecoderUnwrapper.self, from: document).decoder
     }
 }

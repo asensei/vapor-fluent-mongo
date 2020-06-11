@@ -43,7 +43,7 @@ extension DatabaseConfigurationFactory {
         host: String = "127.0.0.1",
         port: Int = 27017,
         database: String,
-        options: ClientOptions? = nil,
+        options: MongoClientOptions? = nil,
         maxConnectionsPerEventLoop: Int = 1
     ) throws -> Self {
 
@@ -68,7 +68,7 @@ extension DatabaseConfigurationFactory {
 
     public static func mongo(
         connectionString: String,
-        options: ClientOptions? = nil,
+        options: MongoClientOptions? = nil,
         maxConnectionsPerEventLoop: Int = 1
     ) throws -> Self {
 
@@ -88,7 +88,7 @@ extension DatabaseConfigurationFactory {
 
     public static func mongo(
         connectionURL: URL,
-        options: ClientOptions? = nil,
+        options: MongoClientOptions? = nil,
         maxConnectionsPerEventLoop: Int = 1
     ) throws -> Self {
 

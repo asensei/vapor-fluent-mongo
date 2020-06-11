@@ -11,7 +11,7 @@ import FluentKit
 
 extension DatabaseSchema.FieldDefinition {
 
-    func mongoValidatorProperty() throws -> (key: String, value: Document, isRequired: Bool)? {
+    func mongoValidatorProperty() throws -> (key: String, value: BSONDocument, isRequired: Bool)? {
         switch self {
         case .definition(let name, let dataType, let constraints):
             guard let mongoType = dataType.mongoType(required: constraints.isRequired) else {
@@ -24,7 +24,7 @@ extension DatabaseSchema.FieldDefinition {
                 isRequired: constraints.isRequired
             )
 
-        case .custom(let value as (key: String, value: Document, isRequired: Bool)):
+        case .custom(let value as (key: String, value: BSONDocument, isRequired: Bool)):
             return value
         case .custom:
             return nil
@@ -34,19 +34,19 @@ extension DatabaseSchema.FieldDefinition {
 
 extension Array where Element == DatabaseSchema.FieldDefinition {
 
-    func mongoValidator() throws -> Document {
+    func mongoValidator() throws -> BSONDocument {
 
         let properties = try self.compactMap { try $0.mongoValidatorProperty() }
         let requiredProperties = properties.filter { $0.isRequired }
 
-        var document: Document = ["$jsonSchema": .document(["bsonType": "object"])]
+        var document: BSONDocument = ["$jsonSchema": .document(["bsonType": "object"])]
 
         if !requiredProperties.isEmpty {
             document["$jsonSchema", "required"] = .array(requiredProperties.map { .string($0.0) })
         }
 
         if !properties.isEmpty {
-            document["$jsonSchema", "properties"] = .document(properties.reduce(into: Document(), { document, property in
+            document["$jsonSchema", "properties"] = .document(properties.reduce(into: BSONDocument(), { document, property in
                 document[property.key] = .document(property.value)
             }))
         }
@@ -71,7 +71,7 @@ extension DatabaseSchema.FieldName {
 
 extension DatabaseSchema.FieldUpdate {
 
-    func mongoValidatorProperty() throws -> (key: String, value: Document)? {
+    func mongoValidatorProperty() throws -> (key: String, value: BSONDocument)? {
         switch self {
         case .dataType(let name, let dataType):
             guard let mongoType = dataType.mongoType(required: false) else {
@@ -83,7 +83,7 @@ extension DatabaseSchema.FieldUpdate {
                 value: mongoType
             )
 
-        case .custom(let value as (key: String, value: Document)):
+        case .custom(let value as (key: String, value: BSONDocument)):
             return value
         case .custom:
             return nil
@@ -93,7 +93,7 @@ extension DatabaseSchema.FieldUpdate {
 
 extension Array where Element == DatabaseSchema.FieldUpdate {
 
-    func mongoValidator(updating validator: Document? = nil) throws -> Document {
+    func mongoValidator(updating validator: BSONDocument? = nil) throws -> BSONDocument {
 
         let properties = try self.compactMap { try $0.mongoValidatorProperty() }
 
@@ -101,7 +101,7 @@ extension Array where Element == DatabaseSchema.FieldUpdate {
             return [
                 "$jsonSchema": .document([
                     "bsonType": "object",
-                    "properties": .document(properties.reduce(into: Document(), { document, property in
+                    "properties": .document(properties.reduce(into: BSONDocument(), { document, property in
                         document[property.key] = .document(property.value)
                     }))
                 ])
@@ -145,7 +145,7 @@ extension DatabaseSchema.Constraint {
             switch alg {
             case .unique(let fields):
                 return .init(
-                    keys: try fields.reduce(into: Document(), { document, field in
+                    keys: try fields.reduce(into: BSONDocument(), { document, field in
                         try document[field.mongoKey()] = .init(DatabaseQuery.Sort.Direction.ascending.mongoSortDirection())
                     }),
                     options: .init(name: name, unique: true)
@@ -168,7 +168,7 @@ extension Array where Element == DatabaseSchema.Constraint {
 
 extension DatabaseSchema.DataType {
 
-    func mongoType(required: Bool) -> Document? {
+    func mongoType(required: Bool) -> BSONDocument? {
 
         guard let key = self.mongoTypeKey, var alias = self.mongoTypeAlias, !alias.isEmpty else {
             return nil

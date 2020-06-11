@@ -11,11 +11,11 @@ import FluentKit
 
 extension DatabaseQuery.Join {
 
-    func mongoLookup() throws -> [Document] {
+    func mongoLookup() throws -> [BSONDocument] {
         switch self {
         case .join(let schema, let alias, let method, let foreign, let local):
 
-            let lookup: Document = [
+            let lookup: BSONDocument = [
                 "$lookup": [
                     "from": .string(schema),
                     "localField": .string(try local.mongoKeyPath()),
@@ -24,7 +24,7 @@ extension DatabaseQuery.Join {
                 ]
             ]
 
-            func unwind(preserveNullAndEmptyArrays: Bool) -> Document {
+            func unwind(preserveNullAndEmptyArrays: Bool) -> BSONDocument {
                 return [
                     "$unwind": [
                         "path": .string("$" + (alias ?? schema)),
@@ -86,8 +86,8 @@ extension DatabaseQuery.Join.Method: Equatable {
 
 extension Array where Element == DatabaseQuery.Join {
 
-    func mongoLookup() throws -> [Document] {
-        return try self.flatMap { join -> [Document] in
+    func mongoLookup() throws -> [BSONDocument] {
+        return try self.flatMap { join -> [BSONDocument] in
             try join.mongoLookup()
         }
     }

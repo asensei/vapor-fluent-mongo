@@ -17,12 +17,12 @@ public struct MongoConfiguration {
 
     public let database: String
 
-    public let options: ClientOptions?
+    public let options: MongoClientOptions?
 
     // MARK: Initialization
 
     /// Creates a new `MongoConfiguration`.
-    public init(connectionString: String, options: ClientOptions? = nil) throws {
+    public init(connectionString: String, options: MongoClientOptions? = nil) throws {
         guard let url = URL(string: connectionString) else {
             throw URLError(.badURL)
         }
@@ -30,7 +30,7 @@ public struct MongoConfiguration {
         try self.init(connectionURL: url, options: options)
     }
 
-    public init(connectionURL: URL, options: ClientOptions? = nil) throws {
+    public init(connectionURL: URL, options: MongoClientOptions? = nil) throws {
         guard let database = connectionURL.path.split(separator: "/").last.flatMap(String.init) else {
             throw URLError(.badURL)
         }
@@ -47,7 +47,7 @@ public struct MongoConfiguration {
         host: String = "127.0.0.1",
         port: Int = 27017,
         database: String,
-        options: ClientOptions? = nil
+        options: MongoClientOptions? = nil
     ) throws {
 
         var components = URLComponents()

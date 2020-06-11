@@ -33,7 +33,7 @@ extension DatabaseQuery.Offset {
 
 extension Array where Element == DatabaseQuery.Offset {
 
-    func mongoSkip() throws -> [Document] {
+    func mongoSkip() throws -> [BSONDocument] {
         guard let offset = self.first else {
             return []
         }

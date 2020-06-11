@@ -28,9 +28,9 @@ extension DatabaseQuery.Field {
 
 extension Array where Element == DatabaseQuery.Field {
 
-    func mongoDistinct(mainSchema: String) throws -> [Document] {
+    func mongoDistinct(mainSchema: String) throws -> [BSONDocument] {
 
-        var id = try self.reduce(into: Document()) { document, field in
+        var id = try self.reduce(into: BSONDocument()) { document, field in
             guard field.schema == nil || field.schema == mainSchema else {
                 return
             }
@@ -42,7 +42,7 @@ extension Array where Element == DatabaseQuery.Field {
             id[mainSchema + ":_id"] = "$_id"
         }
 
-        let group: Document = [
+        let group: BSONDocument = [
             "_id": .document(id),
             "doc": ["$first": "$$ROOT"]
         ]
@@ -53,9 +53,9 @@ extension Array where Element == DatabaseQuery.Field {
         ]
     }
 
-    func mongoProject(mainSchema: String) throws -> [Document] {
+    func mongoProject(mainSchema: String) throws -> [BSONDocument] {
 
-        var projection = try self.reduce(into: Document()) { document, field in
+        var projection = try self.reduce(into: BSONDocument()) { document, field in
             let result = try field.mongoProject(mainSchema: mainSchema)
             document[result.key] = .bool(result.value)
         }

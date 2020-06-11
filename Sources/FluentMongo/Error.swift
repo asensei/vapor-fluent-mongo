@@ -153,13 +153,13 @@ extension EventLoopFuture where Value: Model {
     }
 }
 
-extension WriteError {
+extension MongoError.WriteError {
     var isDuplicatedKeyError: Bool {
         return self.writeFailure?.code == 11000 || self.writeConcernFailure?.code == 11000
     }
 }
 
-extension BulkWriteError {
+extension MongoError.BulkWriteError {
     var isDuplicatedKeyError: Bool {
         switch (self.writeFailures, self.writeConcernFailure) {
         case (_, .some(let failure)):
