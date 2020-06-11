@@ -1,5 +1,5 @@
 //
-//  Document+Nested.swift
+//  BSONDocument+Nested.swift
 //  FluentMongo
 //
 //  Created by Valerio Mazzeo on 06/12/2018.
@@ -10,7 +10,7 @@ import Foundation
 import MongoSwift
 
 // Review when https://jira.mongodb.org/browse/SWIFT-273 will be fixed.
-extension Document {
+extension BSONDocument {
     public subscript(keys: [String]) -> BSON? {
         get {
             guard !keys.isEmpty else {
@@ -26,7 +26,7 @@ extension Document {
             return value
         }
         set {
-            func setNewValue(for keys: [String], in document: inout Document) {
+            func setNewValue(for keys: [String], in document: inout BSONDocument) {
                 guard !keys.isEmpty else {
                     return
                 }
@@ -39,7 +39,7 @@ extension Document {
 
                 var path = keys
                 let component = path.removeFirst()
-                var next = document[component]?.documentValue ?? Document()
+                var next = document[component]?.documentValue ?? BSONDocument()
                 setNewValue(for: path, in: &next)
                 document[component] = .document(next)
             }
@@ -58,11 +58,11 @@ extension Document {
     }
 }
 
-extension Document {
+extension BSONDocument {
 
-    func byRemovingKeysPrefix(_ prefix: String) -> Document {
+    func byRemovingKeysPrefix(_ prefix: String) -> BSONDocument {
 
-        func removeKeysPrefix(_ document: Document) -> Document {
+        func removeKeysPrefix(_ document: BSONDocument) -> BSONDocument {
 
             func ensureNoRootNameSpace(_ value: String) -> String {
                 let components = value.components(separatedBy: ".")
@@ -73,7 +73,7 @@ extension Document {
                 }
             }
 
-            var mutableFilter = Document()
+            var mutableFilter = BSONDocument()
 
             for item in document {
                 switch document[item.key] {

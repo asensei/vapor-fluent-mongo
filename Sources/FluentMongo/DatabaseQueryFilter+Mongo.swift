@@ -11,7 +11,7 @@ import FluentKit
 
 extension DatabaseQuery.Filter {
 
-    func mongoFilter(mainSchema: String, encoder: BSONEncoder) throws -> Document? {
+    func mongoFilter(mainSchema: String, encoder: BSONEncoder) throws -> BSONDocument? {
         switch self {
         case .value(let field, let method, let value):
             let key = try field.mongoKeyPath(namespace: field.schema != mainSchema)
@@ -31,7 +31,7 @@ extension DatabaseQuery.Filter {
             let filters = try filters.compactMap { try $0.mongoFilter(mainSchema: mainSchema, encoder: encoder) }
 
             return try relation.mongoGroup(filters: filters)
-        case .custom(let document as Document):
+        case .custom(let document as BSONDocument):
             return document
         case .custom:
             throw Error.unsupportedFilter
@@ -41,7 +41,7 @@ extension DatabaseQuery.Filter {
 
 extension Array where Element == DatabaseQuery.Filter {
 
-    func mongoMatch(mainSchema: String, encoder: BSONEncoder) throws -> [Document] {
+    func mongoMatch(mainSchema: String, encoder: BSONEncoder) throws -> [BSONDocument] {
 
          let filters = try self.compactMap { filter in
              try filter.mongoFilter(mainSchema: mainSchema, encoder: encoder)
@@ -99,7 +99,7 @@ extension DatabaseQuery.Filter.Relation {
         }
     }
 
-    func mongoGroup(filters: [Document]) throws -> Document? {
+    func mongoGroup(filters: [BSONDocument]) throws -> BSONDocument? {
         switch filters.count {
         case 0:
             return nil

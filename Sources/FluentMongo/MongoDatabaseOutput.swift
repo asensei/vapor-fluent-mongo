@@ -10,7 +10,7 @@ import Foundation
 import FluentKit
 import MongoSwift
 
-extension Document {
+extension BSONDocument {
     func databaseOutput(fields: [DatabaseQuery.Field], using decoder: BSONDecoder) -> DatabaseOutput {
         MongoDatabaseOutput(document: self, decoder: decoder, schema: nil, fields: fields)
     }
@@ -18,7 +18,7 @@ extension Document {
 
 private struct MongoDatabaseOutput: DatabaseOutput {
 
-    let document: Document
+    let document: BSONDocument
     let decoder: BSONDecoder
     let schema: String?
     let fields: [DatabaseQuery.Field]
@@ -72,7 +72,7 @@ private struct MongoDatabaseOutput: DatabaseOutput {
         return try self.decoder.decode(type, from: self.namespace, forKey: key.mongoKey)
     }
 
-    private var namespace: Document {
+    private var namespace: BSONDocument {
         guard let schema = self.schema else {
             return self.document
         }

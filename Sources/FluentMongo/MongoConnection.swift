@@ -15,7 +15,7 @@ final class MongoConnection: ConnectionPoolItem, MongoDatabase {
     public static func connect(
         to connectionString: String,
         database: String,
-        options: ClientOptions? = nil,
+        options: MongoClientOptions? = nil,
         logger: Logger = .init(label: "vapor.fluent.mongo.connection"),
         on eventLoop: EventLoop
     ) -> EventLoopFuture<MongoConnection> {

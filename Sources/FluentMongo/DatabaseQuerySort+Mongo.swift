@@ -28,8 +28,8 @@ extension DatabaseQuery.Sort {
 
 extension Array where Element == DatabaseQuery.Sort {
 
-    func mongoSort(mainSchema: String) throws -> [Document] {
-        let document = try self.reduce(into: Document()) { document, sort in
+    func mongoSort(mainSchema: String) throws -> [BSONDocument] {
+        let document = try self.reduce(into: BSONDocument()) { document, sort in
             let result = try sort.mongoSort(mainSchema: mainSchema)
             document[result.key] = .init(result.value)
         }

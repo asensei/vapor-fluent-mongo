@@ -33,7 +33,7 @@ extension DatabaseQuery.Limit {
 
 extension Array where Element == DatabaseQuery.Limit {
 
-    func mongoLimit() throws -> [Document] {
+    func mongoLimit() throws -> [BSONDocument] {
         guard let limit = self.first else {
             return []
         }

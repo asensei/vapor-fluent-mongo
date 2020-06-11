@@ -41,7 +41,7 @@ struct MongoQueryConverter {
             future = self.aggregate(value, database, session, on: eventLoop)
         case .custom(let value as DatabaseQuery.Action.MongoIndex):
             future = self.index(value, database, session, on: eventLoop)
-        case .custom(let command as Document):
+        case .custom(let command as BSONDocument):
             future = self.custom(command, database, session, on: eventLoop)
         case .custom:
             future = eventLoop.makeFailedFuture(Error.unsupportedQueryAction)
@@ -98,14 +98,14 @@ extension MongoQueryConverter {
                     throw Error.insertManyMismatch(documents.count, result.insertedCount)
                 }
 
-                return result.insertedIds.map {
-                    Document(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(fields: self.query.fields, using: self.decoder)
+                return result.insertedIDs.map {
+                    BSONDocument(dictionaryLiteral: (FieldKey.id.mongoKey, $0.value)).databaseOutput(fields: self.query.fields, using: self.decoder)
                 }
             }.flatMapErrorThrowing { error in
                 switch error {
-                case let error as WriteError where error.isDuplicatedKeyError:
+                case let error as MongoError.WriteError where error.isDuplicatedKeyError:
                     throw Error.duplicatedKey(error.errorDescription ?? "No error description available.")
-                case let error as BulkWriteError where error.isDuplicatedKeyError:
+                case let error as MongoError.BulkWriteError where error.isDuplicatedKeyError:
                     throw Error.duplicatedKey(error.errorDescription ?? "No error description available.")
                 default:
                     throw error
@@ -118,7 +118,7 @@ extension MongoQueryConverter {
 
     private func update(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         do {
-            let documents: [Document] = try self.query.input.compactMap { try $0.mongoValueUpdate(encoder: self.encoder)?.documentValue }
+            let documents: [BSONDocument] = try self.query.input.compactMap { try $0.mongoValueUpdate(encoder: self.encoder)?.documentValue }
 
             return self.filter(database, session, on: eventLoop).flatMap { filter in
                 let collection = database.collection(self.query.schema)
@@ -139,7 +139,7 @@ extension MongoQueryConverter {
         }
     }
 
-    private func custom(_ command: Document, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
+    private func custom(_ command: BSONDocument, _ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<[DatabaseOutput]> {
         return database.runCommand(command, session: session).map { [$0.databaseOutput(fields: self.query.fields, using: self.decoder)] }
     }
 }
@@ -161,10 +161,10 @@ extension MongoQueryConverter {
 
 extension MongoQueryConverter {
 
-    private func aggregationPipeline() throws -> [Document] {
+    private func aggregationPipeline() throws -> [BSONDocument] {
 
         let schema = self.query.schema
-        var pipeline = [Document]()
+        var pipeline = [BSONDocument]()
 
         pipeline += try self.query.joins.mongoLookup()
         pipeline += try self.query.filters.mongoMatch(mainSchema: schema, encoder: self.encoder)
@@ -182,7 +182,7 @@ extension MongoQueryConverter {
         return pipeline
     }
 
-    private func filter(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<Document> {
+    private func filter(_ database: MongoSwift.MongoDatabase, _ session: ClientSession?, on eventLoop: EventLoop) -> EventLoopFuture<BSONDocument> {
 
         guard !self.query.filters.isEmpty else {
             return eventLoop.makeSucceededFuture(.init())
