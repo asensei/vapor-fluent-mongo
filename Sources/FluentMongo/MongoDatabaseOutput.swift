@@ -56,25 +56,3 @@ private struct MongoDatabaseOutput: DatabaseOutput {
         return self.document[schema]?.documentValue ?? self.document
     }
 }
-
-extension FieldProperty {
-
-    public func output(from output: DatabaseOutput, defaultValue: Value) throws {
-        if output.contains(self.key) {
-            try self.output(from: output)
-        } else {
-            self.value = defaultValue
-        }
-    }
-}
-
-extension OptionalFieldProperty {
-
-    public func output(from output: DatabaseOutput, defaultValue: Value) throws {
-        if output.contains(self.key) {
-            try self.output(from: output)
-        } else {
-            self.value = defaultValue
-        }
-    }
-}
