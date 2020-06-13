@@ -190,7 +190,7 @@ extension DatabaseSchema.DataType {
         switch self {
         case .bool,
              .custom(is Bool.Type),
-             .json,
+             .dictionary,
              .array,
              .int8, .int16, .int32, .uint8, .uint16, .uint32,
              .custom(is Int8.Type), .custom(is Int16.Type), .custom(is Int32.Type),
@@ -213,7 +213,7 @@ extension DatabaseSchema.DataType {
         switch self {
         case .bool, .custom(is Bool.Type):
             return ["bool"]
-        case .json:
+        case .dictionary:
             return ["object"]
         case .array:
             return ["array"]

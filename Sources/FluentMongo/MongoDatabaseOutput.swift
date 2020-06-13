@@ -32,18 +32,7 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     }
 
     func contains(_ key: FieldKey) -> Bool {
-        guard !self.namespace.hasKey(key.mongoKey) else {
-            return true
-        }
-
-        return self.fields.contains { field in
-            switch field {
-            case .path(let fieldKeys, let schema) where schema == self.schema:
-                return fieldKeys.mongoKeys.last == key.mongoKey
-            default:
-                return false
-            }
-        }
+        return self.namespace.hasKey(key.mongoKey)
     }
 
     func decodeNil(_ key: FieldKey) throws -> Bool {
@@ -56,19 +45,6 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     }
 
     func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T: Decodable {
-        guard self.namespace.hasKey(key.mongoKey) else {
-            switch T.self {
-            case is ExpressibleByNilLiteral.Type:
-                guard let result = (nil as Any?) as? T else {
-                    throw Error.invalidResult
-                }
-
-                return result
-            default:
-                return try T(from: self.decoder.unwrap())
-            }
-        }
-
         return try self.decoder.decode(type, from: self.namespace, forKey: key.mongoKey)
     }
 
