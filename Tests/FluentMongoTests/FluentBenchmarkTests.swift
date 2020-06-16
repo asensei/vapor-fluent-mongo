@@ -33,8 +33,8 @@ final class FluentBenchmarkTests: XCTestCase {
         try super.setUpWithError()
 
         XCTAssert(isLoggingConfigured)
-        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.threadPool = NIOThreadPool(numberOfThreads: 1)
+        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        self.threadPool = NIOThreadPool(numberOfThreads: System.coreCount)
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
 
         try clearDatabase("\(mongoConnectionString)/vapor_database", on: self.eventLoopGroup)
