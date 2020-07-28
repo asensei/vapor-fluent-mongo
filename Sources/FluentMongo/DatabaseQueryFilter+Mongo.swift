@@ -16,7 +16,7 @@ extension DatabaseQuery.Filter {
         case .value(let field, let method, let value):
             let key = try field.mongoKeyPath(namespace: field.schema != mainSchema)
             let mongoOperator = try method.mongoOperator()
-            guard let bsonValue = try value.mongoValueFilter(encoder: encoder) else {
+            guard let bsonValue = try value.mongoValueFilter(method: method, encoder: encoder) else {
                 return nil
             }
 
@@ -74,8 +74,9 @@ extension DatabaseQuery.Filter.Method {
             }
         case .subset(let inverse):
             return inverse ? "$nin" : "$in"
-        case .contains(let inverse, _):
-            return inverse ? "$nin" : "$in"
+        case .contains(_, _):
+            // Prefer `$in`/`$nin` over double negation once this is fixed: https://github.com/mongodb/mongo-swift-driver/issues/517
+            return "$not"
         case .custom(let value as String):
             return value
         default:

@@ -11,8 +11,34 @@ import FluentKit
 
 extension DatabaseQuery.Value {
 
-    func mongoValueFilter(encoder: BSONEncoder) throws -> BSON? {
-        return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
+    func mongoValueFilter(method: DatabaseQuery.Filter.Method, encoder: BSONEncoder) throws -> BSON? {
+
+        switch method {
+        case .contains(let inverse, let position):
+            guard let value = self.mongoValueString() else {
+                return nil
+            }
+
+            let pattern: String
+            switch position {
+            case .anywhere:
+                pattern = value
+            case .prefix:
+                pattern = "^\(value)"
+            case .suffix:
+                pattern = "\(value)$"
+            }
+
+            var document: BSONDocument = ["$regex": .string(pattern)]
+
+            if (!inverse) {
+                document = ["$not": .document(document)]
+            }
+
+            return .document(document)
+        default:
+            return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
+        }
     }
 
     func mongoValueInsert(encoder: BSONEncoder) throws -> BSON? {
@@ -91,6 +117,24 @@ extension DatabaseQuery.Value {
             return value
         case .custom:
             throw Error.unsupportedValue
+        }
+    }
+
+    private func mongoValueString() -> String? {
+        switch self {
+        case .bind(let value):
+            switch value {
+            case let string as String:
+                return string
+            case let string as CustomStringConvertible:
+                return string.description
+            default:
+                return nil
+            }
+        case .custom(let value as String):
+            return value
+        default:
+            return nil
         }
     }
 }

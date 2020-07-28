@@ -121,19 +121,15 @@ class FluentMongoTests: XCTestCase {
             XCTAssertEqual(r1.count, 1)
             XCTAssertEqual(r1.first?.name, "User1")
 
-            let r2 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), "a").all().wait()
+            let r2 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), ["a"]).all().wait()
             XCTAssertEqual(r2.count, 1)
             XCTAssertEqual(r2.first?.name, "User1")
-            XCTAssertEqual(try User.query(on: database).filter(\.$nicknames ~~ "a").all().wait(), r2)
 
-            let r3 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), "b").all().wait()
+            let r3 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), ["b"]).all().wait()
             XCTAssertEqual(r3.count, 2)
-            XCTAssertEqual(try User.query(on: database).filter(\.$nicknames ~~ "b").all().wait(), r3)
 
             let r4 = try User.query(on: database).filter(\.$nicknames, .subset(inverse: false), ["a", "b"]).all().wait()
             XCTAssertEqual(r4.count, 2)
-            // TODO: https://github.com/vapor/fluent-kit/issues/289
-            // XCTAssertEqual(try User.query(on: database).filter(\.$nicknames ~~ ["a", "b"]).all().wait(), r4)
         } catch {
             XCTFail(error.localizedDescription)
         }

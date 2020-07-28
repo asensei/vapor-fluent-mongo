@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NIO
 import AsyncKit
 import FluentKit
 
@@ -15,6 +16,9 @@ struct FluentMongoConfiguration: DatabaseConfiguration {
     let configuration: MongoConfiguration
 
     let maxConnectionsPerEventLoop: Int
+
+    /// The amount of time to wait for a connection from the connection pool before timing out.
+    let connectionPoolTimeout: NIO.TimeAmount
 
     var middleware: [AnyModelMiddleware]
 
@@ -27,6 +31,7 @@ struct FluentMongoConfiguration: DatabaseConfiguration {
         let pool = EventLoopGroupConnectionPool(
             source: db,
             maxConnectionsPerEventLoop: self.maxConnectionsPerEventLoop,
+            requestTimeout: self.connectionPoolTimeout,
             on: databases.eventLoopGroup
         )
 
@@ -44,7 +49,8 @@ extension DatabaseConfigurationFactory {
         port: Int = 27017,
         database: String,
         options: MongoClientOptions? = nil,
-        maxConnectionsPerEventLoop: Int = 1
+        maxConnectionsPerEventLoop: Int = 1,
+        connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
     ) throws -> Self {
 
         let configuration = try MongoConfiguration(
@@ -61,6 +67,7 @@ extension DatabaseConfigurationFactory {
             FluentMongoConfiguration(
                 configuration: configuration,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+                connectionPoolTimeout: connectionPoolTimeout,
                 middleware: []
             )
         }
@@ -69,7 +76,8 @@ extension DatabaseConfigurationFactory {
     public static func mongo(
         connectionString: String,
         options: MongoClientOptions? = nil,
-        maxConnectionsPerEventLoop: Int = 1
+        maxConnectionsPerEventLoop: Int = 1,
+        connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
     ) throws -> Self {
 
         let configuration = try MongoConfiguration(
@@ -81,6 +89,7 @@ extension DatabaseConfigurationFactory {
             FluentMongoConfiguration(
                 configuration: configuration,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+                connectionPoolTimeout: connectionPoolTimeout,
                 middleware: []
             )
         }
@@ -89,7 +98,8 @@ extension DatabaseConfigurationFactory {
     public static func mongo(
         connectionURL: URL,
         options: MongoClientOptions? = nil,
-        maxConnectionsPerEventLoop: Int = 1
+        maxConnectionsPerEventLoop: Int = 1,
+        connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
     ) throws -> Self {
 
         let configuration = try MongoConfiguration(
@@ -101,6 +111,7 @@ extension DatabaseConfigurationFactory {
             FluentMongoConfiguration(
                 configuration: configuration,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+                connectionPoolTimeout: connectionPoolTimeout,
                 middleware: []
             )
         }
@@ -108,7 +119,8 @@ extension DatabaseConfigurationFactory {
 
     public static func mongo(
         environment: [String: String] = ProcessInfo.processInfo.environment,
-        maxConnectionsPerEventLoop: Int = 1
+        maxConnectionsPerEventLoop: Int = 1,
+        connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
     ) throws -> Self {
 
         let configuration = try MongoConfiguration(environment: environment)
@@ -117,6 +129,7 @@ extension DatabaseConfigurationFactory {
             FluentMongoConfiguration(
                 configuration: configuration,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+                connectionPoolTimeout: connectionPoolTimeout,
                 middleware: []
             )
         }
