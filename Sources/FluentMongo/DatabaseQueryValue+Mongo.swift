@@ -14,7 +14,7 @@ extension DatabaseQuery.Value {
     func mongoValueFilter(method: DatabaseQuery.Filter.Method, encoder: BSONEncoder) throws -> BSON? {
 
         switch method {
-        case .contains(let inverse, let position):
+        case .contains(_, let position):
             guard let value = self.mongoValueString() else {
                 return nil
             }
@@ -29,13 +29,7 @@ extension DatabaseQuery.Value {
                 pattern = "\(value)$"
             }
 
-            var document: BSONDocument = ["$regex": .string(pattern)]
-
-            if (!inverse) {
-                document = ["$not": .document(document)]
-            }
-
-            return .document(document)
+            return .array([.regex(.init(pattern: pattern, options: ""))])
         default:
             return try self.mongoValue(ignoreIfNil: false, encoder: encoder)
         }

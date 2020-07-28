@@ -72,11 +72,9 @@ extension DatabaseQuery.Filter.Method {
             case (false, false):
                 return "$gt"
             }
-        case .subset(let inverse):
+        case .subset(let inverse),
+             .contains(let inverse, _):
             return inverse ? "$nin" : "$in"
-        case .contains(_, _):
-            // Prefer `$in`/`$nin` over double negation once this is fixed: https://github.com/mongodb/mongo-swift-driver/issues/517
-            return "$not"
         case .custom(let value as String):
             return value
         default:
