@@ -16,7 +16,7 @@ extension DatabaseQuery.Filter {
         case .value(let field, let method, let value):
             let key = try field.mongoKeyPath(namespace: field.schema != mainSchema)
             let mongoOperator = try method.mongoOperator()
-            guard let bsonValue = try value.mongoValueFilter(encoder: encoder) else {
+            guard let bsonValue = try value.mongoValueFilter(method: method, encoder: encoder) else {
                 return nil
             }
 
@@ -72,9 +72,8 @@ extension DatabaseQuery.Filter.Method {
             case (false, false):
                 return "$gt"
             }
-        case .subset(let inverse):
-            return inverse ? "$nin" : "$in"
-        case .contains(let inverse, _):
+        case .subset(let inverse),
+             .contains(let inverse, _):
             return inverse ? "$nin" : "$in"
         case .custom(let value as String):
             return value
