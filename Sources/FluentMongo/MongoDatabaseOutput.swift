@@ -36,8 +36,14 @@ private struct MongoDatabaseOutput: DatabaseOutput {
     }
 
     func decodeNil(_ key: FieldKey) throws -> Bool {
-        switch self.namespace[key.mongoKey] {
-        case .undefined, .null, .none:
+
+        // https://github.com/mongodb/mongo-swift-driver/issues/516#issuecomment-666863404
+        guard let value = self.namespace[key.mongoKey] else {
+            return true
+        }
+
+        switch value {
+        case .undefined, .null:
             return true
         default:
             return false

@@ -19,7 +19,7 @@ let package = Package(
         .library(name: "FluentMongo", targets: ["FluentMongo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", .upToNextMajor(from: "1.5.2")),
+        .package(url: "https://github.com/vapor/fluent-kit.git", .upToNextMajor(from: "1.6.0")),
         .package(url: "https://github.com/mongodb/mongo-swift-driver.git", .upToNextMajor(from: "1.0.0"))
     ],
     targets: [
