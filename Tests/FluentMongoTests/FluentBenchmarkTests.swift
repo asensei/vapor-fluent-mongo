@@ -73,8 +73,7 @@ final class FluentBenchmarkTests: XCTestCase {
     func testParent() throws { try self.benchmarker.testParent() }
     func testPerformance() throws { try self.benchmarker.testPerformance(decimalType: .dictionary) }
     func testRange() throws { try self.benchmarker.testRange() }
-    // Disabled until https://github.com/vapor/fluent-kit/pull/368
-    //func testSchema() throws { try self.benchmarker.testSchema() }
+    func testSchema() throws { try self.benchmarker.testSchema(foreignKeys: false) }
     func testSet() throws { try self.benchmarker.testSet() }
     func testSiblings() throws { try self.benchmarker.testSiblings() }
     func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
