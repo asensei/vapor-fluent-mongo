@@ -77,7 +77,7 @@ final class FluentBenchmarkTests: XCTestCase {
     func testSet() throws { try self.benchmarker.testSet() }
     func testSiblings() throws { try self.benchmarker.testSiblings() }
     func testSoftDelete() throws { try self.benchmarker.testSoftDelete() }
-    func testSort() throws { try self.benchmarker.testSort() }
+    func testSort() throws { try self.benchmarker.testSort(sql: false) }
     func testTimestamp() throws { try self.benchmarker.testTimestamp() }
     func testTransaction() throws {
         #if os(Linux)
