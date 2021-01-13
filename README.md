@@ -1,6 +1,6 @@
 # vapor-fluent-mongo
 
-![Swift](https://img.shields.io/badge/swift-5.2-orange.svg)
+![Swift](https://img.shields.io/badge/swift-5.3-orange.svg)
 [![Build Status](https://travis-ci.com/asensei/vapor-fluent-mongo.svg?token=eSrCssnzja3G3GciyhUB&branch=master)](https://travis-ci.com/asensei/vapor-fluent-mongo)
 
 Mongo driver for Fluent `4.x`.
