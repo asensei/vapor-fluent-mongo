@@ -3,8 +3,8 @@ language: generic
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:4.4
-  - export MONGO_BREW_VERSION=mongodb-community@4.4
+  - export MONGO_DOCKER_IMAGE=mongo:5.0
+  - export MONGO_BREW_VERSION=mongodb-community@5.0
 
 stages:
 - name: test
@@ -32,7 +32,7 @@ jobs:
     - stage: test
       name: Unit Tests
       os: osx
-      osx_image: xcode12.3
+      osx_image: xcode13.1
       before_script:
         - gem install bundler
         - bundle install

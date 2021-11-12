@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.5
 
 //
 //  Package.swift
@@ -19,8 +19,8 @@ let package = Package(
         .library(name: "FluentMongo", targets: ["FluentMongo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", .upToNextMajor(from: "1.10.3")),
-        .package(url: "https://github.com/mongodb/mongo-swift-driver.git", .upToNextMajor(from: "1.1.0"))
+        .package(url: "https://github.com/vapor/fluent-kit.git", .upToNextMajor(from: "1.16.0")),
+        .package(url: "https://github.com/mongodb/mongo-swift-driver.git", .upToNextMajor(from: "1.2.0"))
     ],
     targets: [
         .target(name: "FluentMongo", dependencies: [
