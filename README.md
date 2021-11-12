@@ -1,6 +1,6 @@
 # vapor-fluent-mongo
 
-![Swift](https://img.shields.io/badge/swift-5.3-orange.svg)
+![Swift](https://img.shields.io/badge/swift-5.5-orange.svg)
 [![Build Status](https://travis-ci.com/asensei/vapor-fluent-mongo.svg?token=eSrCssnzja3G3GciyhUB&branch=master)](https://travis-ci.com/asensei/vapor-fluent-mongo)
 
 Mongo driver for Fluent `4.x`.
@@ -13,15 +13,6 @@ Mongo driver for Fluent `4.x`.
 
 ## Getting Started
 
-### Install the MongoDB C Driver
-The driver wraps the MongoDB C driver, and using it requires having the C driver's two components, `libbson` and `libmongoc`, installed on your system. **The minimum required version of the C Driver is 1.16.2**.
-
-On a Mac, you can install both components at once using [Homebrew](https://brew.sh/):
-`brew install mongo-c-driver`.
-
-On Linux: please follow the [instructions](http://mongoc.org/libmongoc/current/installing.html#building-on-unix) from `libmongoc`'s documentation. Note that the versions provided by your package manager may be too old, in which case you can follow the instructions for building and installing from source.
-
-
 ### Install FluentMongo
 
 *Please follow the instructions in the previous section on installing the MongoDB C Driver before proceeding.*
@@ -29,7 +20,7 @@ On Linux: please follow the [instructions](http://mongoc.org/libmongoc/current/i
 Add FluentMongo to your dependencies in `Package.swift`:
 
 ```swift
-// swift-tools-version:5.1
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
