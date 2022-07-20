@@ -84,6 +84,12 @@ extension DatabaseQuery.Field {
             return ([schema] + value.mongoKeys)
         case .path(let value, _):
             return value.mongoKeys
+        case .extendedPath(let value, let schema, .none) where namespace:
+            return ([schema] + value.mongoKeys)
+        case .extendedPath(let value, _, .none):
+            return value.mongoKeys
+        case .extendedPath(_, _, .some):
+            throw Error.unsupportedField
         case .custom(let value as [String]):
             return value
         case .custom(let value as String):

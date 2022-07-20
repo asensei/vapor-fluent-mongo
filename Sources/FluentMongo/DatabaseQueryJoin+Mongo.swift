@@ -14,37 +14,49 @@ extension DatabaseQuery.Join {
     func mongoLookup() throws -> [BSONDocument] {
         switch self {
         case .join(let schema, let alias, let method, let foreign, let local):
+            return try self._lookup(schema: schema, alias: alias, method: method, foreign: foreign, local: local)
+        case .extendedJoin(let schema, let space, let alias, let method, let foreign, let local) where space == nil:
+            return try self._lookup(schema: schema, alias: alias, method: method, foreign: foreign, local: local)
+        case .extendedJoin, .custom:
+            throw Error.unsupportedJoin
+        }
+    }
 
-            let lookup: BSONDocument = [
-                "$lookup": [
-                    "from": .string(schema),
-                    "localField": .string(try local.mongoKeyPath()),
-                    "foreignField": .string(try foreign.mongoKeyPath()),
-                    "as": .string(alias ?? schema)
+    private func _lookup(
+        schema: String,
+        alias: String?,
+        method: Method,
+        foreign: DatabaseQuery.Field,
+        local: DatabaseQuery.Field
+    ) throws -> [BSONDocument] {
+
+        let lookup: BSONDocument = [
+            "$lookup": [
+                "from": .string(schema),
+                "localField": .string(try local.mongoKeyPath()),
+                "foreignField": .string(try foreign.mongoKeyPath()),
+                "as": .string(alias ?? schema)
+            ]
+        ]
+
+        func unwind(preserveNullAndEmptyArrays: Bool) -> BSONDocument {
+            return [
+                "$unwind": [
+                    "path": .string("$" + (alias ?? schema)),
+                    "preserveNullAndEmptyArrays": .bool(preserveNullAndEmptyArrays)
                 ]
             ]
+        }
 
-            func unwind(preserveNullAndEmptyArrays: Bool) -> BSONDocument {
-                return [
-                    "$unwind": [
-                        "path": .string("$" + (alias ?? schema)),
-                        "preserveNullAndEmptyArrays": .bool(preserveNullAndEmptyArrays)
-                    ]
-                ]
-            }
-
-            switch method {
-            case .left:
-                return [lookup]
-            case .inner:
-                return [lookup, unwind(preserveNullAndEmptyArrays: false)]
-            case .outer:
-                return [lookup, unwind(preserveNullAndEmptyArrays: true)]
-            default:
-                throw Error.unsupportedJoinMethod
-            }
-        case .custom:
-            throw Error.unsupportedJoin
+        switch method {
+        case .left:
+            return [lookup]
+        case .inner:
+            return [lookup, unwind(preserveNullAndEmptyArrays: false)]
+        case .outer:
+            return [lookup, unwind(preserveNullAndEmptyArrays: true)]
+        default:
+            throw Error.unsupportedJoinMethod
         }
     }
 }
