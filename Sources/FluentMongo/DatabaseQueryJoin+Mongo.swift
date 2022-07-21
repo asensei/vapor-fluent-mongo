@@ -15,7 +15,7 @@ extension DatabaseQuery.Join {
         switch self {
         case .join(let schema, let alias, let method, let foreign, let local):
             return try self._lookup(schema: schema, alias: alias, method: method, foreign: foreign, local: local)
-        case .extendedJoin(let schema, let space, let alias, let method, let foreign, let local) where space == nil:
+        case .extendedJoin(let schema, .none, let alias, let method, let foreign, let local):
             return try self._lookup(schema: schema, alias: alias, method: method, foreign: foreign, local: local)
         case .extendedJoin, .custom:
             throw Error.unsupportedJoin

@@ -141,18 +141,27 @@ extension DatabaseSchema.Constraint {
 
     func mongoIndex() throws -> IndexModel? {
         switch self {
-        case .constraint(let alg, let name):
+        case .constraint(let alg, _):
             switch alg {
-            case .unique(let fields):
+            case .unique(let fields), .compositeIdentifier(let fields):
                 return .init(
                     keys: try fields.reduce(into: BSONDocument(), { document, field in
                         try document[field.mongoKey()] = .init(DatabaseQuery.Sort.Direction.ascending.mongoSortDirection())
                     }),
-                    options: .init(name: name, unique: true)
+                    options: .init(name: self.mongoName, unique: true)
                 )
             default:
                 return nil
             }
+        default:
+            return nil
+        }
+    }
+
+    var mongoName: String? {
+        switch self {
+        case .constraint(_, .some(let name)) where !name.isEmpty:
+            return name
         default:
             return nil
         }
