@@ -45,7 +45,7 @@ jobs:
         - swift --version
         - swift build
         - swift build -c release
-        - swift test --sanitize=thread
+        - swift test
         - swiftlint
 
 notifications:
