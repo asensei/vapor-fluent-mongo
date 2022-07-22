@@ -190,6 +190,14 @@ extension MongoQueryConverter {
 
         do {
             var pipeline = try self.aggregationPipeline()
+            pipeline = pipeline.map { stage in
+                guard stage.hasKey("$project"), var document = stage["$project"]?.documentValue else {
+                    return stage
+                }
+                document["_id"] = .bool(true)
+
+                return ["$project": .document(document)]
+            }
             pipeline.append(["$project": ["_id": true]])
 
             return database.collection(self.query.schema).aggregate(pipeline, session: session).flatMap { cursor in
