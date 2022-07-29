@@ -59,6 +59,19 @@ class FluentMongoTests: XCTestCase {
         }
     }
 
+    func testTextIndex() {
+        do {
+            let database = self.database
+            try User.index(on: database).key(\.$name, .text).name("test_text_index").unique(true).create().wait()
+            XCTAssertNoThrow(try User(name: "asdf", age: 42).save(on: database).wait())
+            XCTAssertThrowsError(try User(name: "asdf", age: 58).save(on: database).wait())
+            try User.index(on: database).name("test_text_index").drop().wait()
+            XCTAssertNoThrow(try User(name: "asdf", age: 58).save(on: database).wait())
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+
     func testNestedIndexUsingDotNotation() {
         do {
             let database = self.database

@@ -154,7 +154,11 @@ extension MongoQueryConverter {
         case .create(let index):
             return collection.createIndex(index).transform(to: [])
         case .delete(let index):
-            return collection.dropIndex(index).transform(to: [])
+            if let name = index.options?.name {
+                return collection.dropIndex(name).transform(to: [])
+            } else {
+                return collection.dropIndex(index).transform(to: [])
+            }
         }
     }
 }

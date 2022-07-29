@@ -43,7 +43,26 @@ extension IndexBuilder {
 
     public func key(_ keyNames: [FieldKey], _ direction: SortDirection = .ascending) -> Self {
         var keys = self.index.keys
-        keys[keyNames.mongoKeys.dotNotation] = .init(direction.rawValue)
+        keys[keyNames.mongoKeys.dotNotation] = IndexType.sort(direction).bsonValue
+        self.index = IndexModel(keys: keys, options: self.index.options)
+
+        return self
+    }
+}
+
+extension IndexBuilder {
+
+    public func key<Key: QueryableProperty>(_ key: KeyPath<Model, Key>, _ type: IndexType = .sort(.ascending)) -> Self where Key.Model == Model {
+        return self.key(Model.init()[keyPath: key].path, type)
+    }
+
+    public func key(_ keyName: FieldKey, _ type: IndexType = .sort(.ascending)) -> Self {
+        return self.key([keyName], type)
+    }
+
+    public func key(_ keyNames: [FieldKey], _ type: IndexType = .sort(.ascending)) -> Self {
+        var keys = self.index.keys
+        keys[keyNames.mongoKeys.dotNotation] = type.bsonValue
         self.index = IndexModel(keys: keys, options: self.index.options)
 
         return self
@@ -106,6 +125,20 @@ extension IndexBuilder {
 }
 
 extension IndexBuilder {
+
+    public enum IndexType {
+        case sort(SortDirection)
+        case text
+
+        fileprivate var bsonValue: BSON {
+            switch self {
+            case .sort(let direction):
+                return .init(direction.rawValue)
+            case .text:
+                return "text"
+            }
+        }
+    }
 
     public enum SortDirection: Int {
         case ascending = 1
