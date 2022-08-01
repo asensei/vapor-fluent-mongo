@@ -31,8 +31,8 @@ extension DatabaseQuery.Filter {
             let filters = try filters.compactMap { try $0.mongoFilter(mainSchema: mainSchema, encoder: encoder) }
 
             return try relation.mongoGroup(filters: filters)
-        case .custom(let search as MongoTextSearch):
-            return ["$text": search.mongoSearch()]
+        case .custom(let textSearch as MongoTextSearch):
+            return self.mongoTextSearch(textSearch)
         case .custom(let document as BSONDocument):
             return document
         case .custom:
@@ -82,7 +82,7 @@ extension DatabaseQuery.Filter {
             self.init(search: value)
         }
 
-        func mongoSearch() -> BSON {
+        func bsonValue() -> BSON {
             var document: BSONDocument = ["$search": .string(self.search)]
             document["$language"] = self.language.map { .string($0) }
             document["$caseSensitive"] = self.caseSensitive.map { .bool($0) }
@@ -103,6 +103,10 @@ extension DatabaseQuery.Filter {
         default:
             return false
         }
+    }
+
+    func mongoTextSearch(_ textSearch: MongoTextSearch) -> BSONDocument {
+        return ["$text": textSearch.bsonValue()]
     }
 }
 

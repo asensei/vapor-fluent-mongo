@@ -12,8 +12,18 @@ import FluentKit
 extension QueryBuilder {
 
     @discardableResult
-    public func filter(keywords: String) -> Self {
-        self.query.filters.append(.text(.init(search: keywords)))
+    public func filter(
+        keywords: String,
+        language: String? = nil,
+        caseSensitive: Bool? = nil,
+        diacriticSensitive: Bool? = nil
+    ) -> Self {
+        self.query.filters.append(.text(.init(
+            search: keywords,
+            language: language,
+            caseSensitive: caseSensitive,
+            diacriticSensitive: diacriticSensitive
+        )))
 
         return self
     }
