@@ -62,10 +62,10 @@ class FluentMongoTests: XCTestCase {
     func testTextIndex() {
         do {
             let database = self.database
-            try User.index(on: database).key(\.$name, .text).unique(true).create().wait()
+            try User.index(on: database).key(\.$name, .text).name("test_text_index").unique(true).create().wait()
             XCTAssertNoThrow(try User(name: "asdf", age: 42).save(on: database).wait())
             XCTAssertThrowsError(try User(name: "asdf", age: 58).save(on: database).wait())
-            try User.index(on: database).key(\.$name, .text).drop().wait()
+            try User.index(on: database).name("test_text_index").drop().wait()
             XCTAssertNoThrow(try User(name: "asdf", age: 58).save(on: database).wait())
         } catch {
             XCTFail(error.localizedDescription)
@@ -112,6 +112,45 @@ class FluentMongoTests: XCTestCase {
 
                     return
             }
+        }
+    }
+
+    func testFilterKeywords() {
+        do {
+            let database = self.database
+
+            try Toy.index(on: database).key(\.$name, .text).create().wait()
+
+            let ball = Toy(name: "ball")
+            try ball.save(on: database).wait()
+
+            let bone = Toy(name: "bone")
+            try bone.save(on: database).wait()
+
+            let puppet = Toy(name: "puppet")
+            try puppet.save(on: database).wait()
+
+            let molly = Pet(name: "Molly", age: 2, favoriteToyId: try ball.requireID())
+            try molly.save(on: database).wait()
+
+            let rex = Pet(name: "Rex", age: 1, favoriteToyId: try bone.requireID())
+            try rex.save(on: database).wait()
+
+            // Inner Join
+            let toysFavoritedByPets = try Toy
+                .query(on: database)
+                .field(\.$id)
+                .field(\.$name)
+                .join(Pet.self, on: \Toy.$id == \Pet.$favoriteToy.$id, method: .inner)
+                .filter(keywords: "bone")
+                .sort(\.$name)
+                .all()
+                .wait()
+
+            XCTAssertEqual(toysFavoritedByPets.count, 1)
+            XCTAssertEqual(toysFavoritedByPets.first?.id, bone.id)
+        } catch {
+            XCTFail(error.localizedDescription)
         }
     }
 

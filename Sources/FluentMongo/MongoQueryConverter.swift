@@ -170,13 +170,19 @@ extension MongoQueryConverter {
         let schema = self.query.schema
         var pipeline = [BSONDocument]()
 
+        let filters = self.query.filters.filter { !$0.isTextFilter }
+        let textFilters = self.query.filters.filter { $0.isTextFilter }
+        if !textFilters.isEmpty {
+            pipeline += try textFilters.mongoMatch(mainSchema: schema, encoder: self.encoder)
+        }
+
         pipeline += try self.query.joins.mongoLookup()
-        pipeline += try self.query.filters.mongoMatch(mainSchema: schema, encoder: self.encoder)
+        pipeline += try filters.mongoMatch(mainSchema: schema, encoder: self.encoder)
         pipeline += try self.query.fields.mongoProject(mainSchema: schema)
         if self.query.isUnique {
             pipeline += try self.query.fields.mongoDistinct(mainSchema: schema)
         }
-        pipeline += try self.query.sorts.mongoSort(mainSchema: schema)
+        pipeline += try self.query.sorts.mongoSort(mainSchema: schema, textScore: !textFilters.isEmpty)
         pipeline += try self.query.offsets.mongoSkip()
         pipeline += try self.query.limits.mongoLimit()
         if case .aggregate(let aggregate) = self.query.action {
