@@ -31,6 +31,8 @@ extension DatabaseQuery.Filter {
             let filters = try filters.compactMap { try $0.mongoFilter(mainSchema: mainSchema, encoder: encoder) }
 
             return try relation.mongoGroup(filters: filters)
+        case .custom(let textSearch as MongoTextSearch):
+            return self.mongoTextSearch(textSearch)
         case .custom(let document as BSONDocument):
             return document
         case .custom:
@@ -52,6 +54,59 @@ extension Array where Element == DatabaseQuery.Filter {
         }
 
         return [["$match": .document(group)]]
+    }
+}
+
+extension DatabaseQuery.Filter {
+
+    struct MongoTextSearch: ExpressibleByStringLiteral {
+
+        public let search: String
+        public let language: String?
+        public let caseSensitive: Bool?
+        public let diacriticSensitive: Bool?
+
+        public init(
+            search: String,
+            language: String? = nil,
+            caseSensitive: Bool? = nil,
+            diacriticSensitive: Bool? = nil
+        ) {
+            self.search = search
+            self.language = language
+            self.caseSensitive = caseSensitive
+            self.diacriticSensitive = diacriticSensitive
+        }
+
+        public init(stringLiteral value: String) {
+            self.init(search: value)
+        }
+
+        func bsonValue() -> BSON {
+            var document: BSONDocument = ["$search": .string(self.search)]
+            document["$language"] = self.language.map { .string($0) }
+            document["$caseSensitive"] = self.caseSensitive.map { .bool($0) }
+            document["$diacriticSensitive"] = self.diacriticSensitive.map { .bool($0) }
+
+            return .document(document)
+        }
+    }
+
+    static func text(_ search: MongoTextSearch) -> DatabaseQuery.Filter {
+        return .custom(search)
+    }
+
+    var isTextFilter: Bool {
+        switch self {
+        case .custom(is MongoTextSearch):
+            return true
+        default:
+            return false
+        }
+    }
+
+    func mongoTextSearch(_ textSearch: MongoTextSearch) -> BSONDocument {
+        return ["$text": textSearch.bsonValue()]
     }
 }
 

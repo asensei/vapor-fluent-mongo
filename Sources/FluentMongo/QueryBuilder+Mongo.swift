@@ -11,6 +11,23 @@ import FluentKit
 
 extension QueryBuilder {
 
+    @discardableResult
+    public func filter(
+        keywords: String,
+        language: String? = nil,
+        caseSensitive: Bool? = nil,
+        diacriticSensitive: Bool? = nil
+    ) -> Self {
+        self.query.filters.append(.text(.init(
+            search: keywords,
+            language: language,
+            caseSensitive: caseSensitive,
+            diacriticSensitive: diacriticSensitive
+        )))
+
+        return self
+    }
+
     /// Adds elements to an array only if they do not already exist in the set.
     @discardableResult
     public func set<Field>(

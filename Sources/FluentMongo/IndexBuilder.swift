@@ -43,7 +43,26 @@ extension IndexBuilder {
 
     public func key(_ keyNames: [FieldKey], _ direction: SortDirection = .ascending) -> Self {
         var keys = self.index.keys
-        keys[keyNames.mongoKeys.dotNotation] = .init(direction.rawValue)
+        keys[keyNames.mongoKeys.dotNotation] = IndexType.sort(direction).bsonValue
+        self.index = IndexModel(keys: keys, options: self.index.options)
+
+        return self
+    }
+}
+
+extension IndexBuilder {
+
+    public func key<Key: QueryableProperty>(_ key: KeyPath<Model, Key>, _ type: IndexType = .sort(.ascending)) -> Self where Key.Model == Model {
+        return self.key(Model.init()[keyPath: key].path, type)
+    }
+
+    public func key(_ keyName: FieldKey, _ type: IndexType = .sort(.ascending)) -> Self {
+        return self.key([keyName], type)
+    }
+
+    public func key(_ keyNames: [FieldKey], _ type: IndexType = .sort(.ascending)) -> Self {
+        var keys = self.index.keys
+        keys[keyNames.mongoKeys.dotNotation] = type.bsonValue
         self.index = IndexModel(keys: keys, options: self.index.options)
 
         return self
@@ -86,6 +105,10 @@ extension IndexBuilder {
 
     public func create() -> EventLoopFuture<Void> {
 
+        if self.index.options?.name == nil {
+            _ = self.name(self.index.defaultName())
+        }
+
         var query = Model.query(on: self.database).query
         query.action = .index(.create(self.index))
 
@@ -95,6 +118,10 @@ extension IndexBuilder {
     }
 
     public func drop() -> EventLoopFuture<Void> {
+
+        if self.index.hasText, self.index.options?.name == nil {
+            _ = self.name(self.index.defaultName())
+        }
 
         var query = Model.query(on: self.database).query
         query.action = .index(.delete(self.index))
@@ -106,6 +133,20 @@ extension IndexBuilder {
 }
 
 extension IndexBuilder {
+
+    public enum IndexType {
+        case sort(SortDirection)
+        case text
+
+        fileprivate var bsonValue: BSON {
+            switch self {
+            case .sort(let direction):
+                return .init(direction.rawValue)
+            case .text:
+                return "text"
+            }
+        }
+    }
 
     public enum SortDirection: Int {
         case ascending = 1
@@ -129,5 +170,21 @@ extension DatabaseQuery.Action {
 
     public static func index(_ action: MongoIndex) -> DatabaseQuery.Action {
         return .custom(action)
+    }
+}
+
+extension IndexModel {
+
+    fileprivate func defaultName() -> String {
+        return self.keys.compactMap { k, v in
+            guard let vString = v.toInt().map({ String ($0) }) ?? v.stringValue else {
+                return nil
+            }
+            return "\(k)_\(vString)"
+        }.joined(separator: "_")
+    }
+
+    fileprivate var hasText: Bool {
+        return self.keys.contains { $1.stringValue == "text" }
     }
 }

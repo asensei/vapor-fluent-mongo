@@ -28,10 +28,14 @@ extension DatabaseQuery.Sort {
 
 extension Array where Element == DatabaseQuery.Sort {
 
-    func mongoSort(mainSchema: String) throws -> [BSONDocument] {
-        let document = try self.reduce(into: BSONDocument()) { document, sort in
+    func mongoSort(mainSchema: String, textScore: Bool) throws -> [BSONDocument] {
+        var document = try self.reduce(into: BSONDocument()) { document, sort in
             let result = try sort.mongoSort(mainSchema: mainSchema)
             document[result.key] = .init(result.value)
+        }
+
+        if textScore {
+            document["score"] = ["$meta": "textScore"]
         }
 
         guard !document.isEmpty else {
