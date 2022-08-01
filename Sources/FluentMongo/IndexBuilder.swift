@@ -105,6 +105,10 @@ extension IndexBuilder {
 
     public func create() -> EventLoopFuture<Void> {
 
+        if self.index.options?.name == nil {
+            _ = self.name(self.index.defaultName())
+        }
+
         var query = Model.query(on: self.database).query
         query.action = .index(.create(self.index))
 
@@ -114,6 +118,10 @@ extension IndexBuilder {
     }
 
     public func drop() -> EventLoopFuture<Void> {
+
+        if self.index.hasText, self.index.options?.name == nil {
+            _ = self.name(self.index.defaultName())
+        }
 
         var query = Model.query(on: self.database).query
         query.action = .index(.delete(self.index))
@@ -162,5 +170,21 @@ extension DatabaseQuery.Action {
 
     public static func index(_ action: MongoIndex) -> DatabaseQuery.Action {
         return .custom(action)
+    }
+}
+
+extension IndexModel {
+
+    fileprivate func defaultName() -> String {
+        return self.keys.compactMap { k, v in
+            guard let vString = v.toInt().map({ String ($0) }) ?? v.stringValue else {
+                return nil
+            }
+            return "\(k)_\(vString)"
+        }.joined(separator: "_")
+    }
+
+    fileprivate var hasText: Bool {
+        return self.keys.contains { $1.stringValue == "text" }
     }
 }
