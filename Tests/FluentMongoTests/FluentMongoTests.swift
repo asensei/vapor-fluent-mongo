@@ -49,10 +49,10 @@ class FluentMongoTests: XCTestCase {
     func testIndex() {
         do {
             let database = self.database
-            try User.index(on: database).key(\.$name, .descending).unique(true).create().wait()
+            try User.index(on: database).key(\.$name, .sort(.descending)).unique(true).create().wait()
             XCTAssertNoThrow(try User(name: "asdf", age: 42).save(on: database).wait())
             XCTAssertThrowsError(try User(name: "asdf", age: 58).save(on: database).wait())
-            try User.index(on: database).key(\.$name, .descending).drop().wait()
+            try User.index(on: database).key(\.$name, .sort(.descending)).drop().wait()
             XCTAssertNoThrow(try User(name: "asdf", age: 58).save(on: database).wait())
         } catch {
             XCTFail(error.localizedDescription)
@@ -75,10 +75,10 @@ class FluentMongoTests: XCTestCase {
     func testNestedIndexUsingDotNotation() {
         do {
             let database = self.database
-            try User.index(on: database).key("nested.p1", .descending).unique(true).create().wait()
+            try User.index(on: database).key("nested.p1", .sort(.descending)).unique(true).create().wait()
             XCTAssertNoThrow(try User(name: "a", nested: .init(p1: "a")).save(on: database).wait())
             XCTAssertThrowsError(try User(name: "b", nested: .init(p1: "a")).save(on: database).wait())
-            try User.index(on: database).key("nested.p1", .descending).drop().wait()
+            try User.index(on: database).key("nested.p1", .sort(.descending)).drop().wait()
             XCTAssertNoThrow(try User(name: "c", nested: .init(p1: "a")).save(on: database).wait())
         } catch {
             XCTFail(error.localizedDescription)
@@ -88,10 +88,10 @@ class FluentMongoTests: XCTestCase {
     func testNestedIndexUsingKeyNames() {
         do {
             let database = self.database
-            try User.index(on: database).key(["nested", "p1"], .descending).unique(true).create().wait()
+            try User.index(on: database).key(["nested", "p1"], .sort(.descending)).unique(true).create().wait()
             XCTAssertNoThrow(try User(name: "a", nested: .init(p1: "a")).save(on: database).wait())
             XCTAssertThrowsError(try User(name: "b", nested: .init(p1: "a")).save(on: database).wait())
-            try User.index(on: database).key(["nested", "p1"], .descending).drop().wait()
+            try User.index(on: database).key(["nested", "p1"], .sort(.descending)).drop().wait()
             XCTAssertNoThrow(try User(name: "c", nested: .init(p1: "a")).save(on: database).wait())
         } catch {
             XCTFail(error.localizedDescription)

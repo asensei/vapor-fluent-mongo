@@ -33,25 +33,6 @@ public final class IndexBuilder<Model: FluentKit.Model> {
 
 extension IndexBuilder {
 
-    public func key<Key: QueryableProperty>(_ key: KeyPath<Model, Key>, _ direction: SortDirection = .ascending) -> Self where Key.Model == Model {
-        return self.key(Model.init()[keyPath: key].path, direction)
-    }
-
-    public func key(_ keyName: FieldKey, _ direction: SortDirection = .ascending) -> Self {
-        return self.key([keyName], direction)
-    }
-
-    public func key(_ keyNames: [FieldKey], _ direction: SortDirection = .ascending) -> Self {
-        var keys = self.index.keys
-        keys[keyNames.mongoKeys.dotNotation] = IndexType.sort(direction).bsonValue
-        self.index = IndexModel(keys: keys, options: self.index.options)
-
-        return self
-    }
-}
-
-extension IndexBuilder {
-
     public func key<Key: QueryableProperty>(_ key: KeyPath<Model, Key>, _ type: IndexType = .sort(.ascending)) -> Self where Key.Model == Model {
         return self.key(Model.init()[keyPath: key].path, type)
     }
