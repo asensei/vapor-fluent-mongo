@@ -4,7 +4,7 @@ before_install:
   - export SWIFT_VERSION=$(<.swift-version)
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
   - export MONGO_DOCKER_IMAGE=mongo:7.0
-  - export MONGO_BREW_VERSION=mongodb-community@6.0
+  - export MONGO_BREW_VERSION=mongodb-community@5.0
 
 stages:
   - name: test
