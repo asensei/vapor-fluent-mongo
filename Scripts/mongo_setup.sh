@@ -39,7 +39,7 @@ echo "STARTING CLUSTER"
 
 mkdir -p data/db
 
-mongod --port 27017 --dbpath=data/db --replSet $REPLICA_SET_NAME --bind_ip_all &
+mongod --port 27017 --dbpath=data/db --replSet $REPLICA_SET_NAME --bind_ip_all --quiet &
 DB1_PID=$!
 
 waitForMongo 27017
