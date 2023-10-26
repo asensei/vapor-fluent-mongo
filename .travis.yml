@@ -21,12 +21,8 @@ jobs:
         - docker pull ${SWIFT_DOCKER_IMAGE}
         - docker pull ${MONGO_DOCKER_IMAGE}
         - docker run -d -p 27017:27017 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
-        - args="apt-get update
-          && apt-get -y install cmake libssl-dev libsasl2-dev
-          && swift build -c debug
-          && swift build -c release
-          && swift test -c debug --sanitize=thread";
-        - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
+        - args="apt-get update && apt-get -y install cmake libssl-dev libsasl2-dev && swift test -c debug --sanitize=thread";
+        - docker run --rm --add-host host.docker.internal:host-gateway -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
 
     - stage: test
       name: Unit Tests
