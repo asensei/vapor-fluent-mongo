@@ -17,10 +17,14 @@ jobs:
       os: linux
       dist: bionic
       services: docker
+      addons:
+        apt:
+          packages:
+            - docker-ce
       script:
         - docker pull ${SWIFT_DOCKER_IMAGE}
         - docker pull ${MONGO_DOCKER_IMAGE}
-        - docker compose up --detach
+        - docker run -p 27017:27017 -p 27018:27018 -p 27019:27019 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
           && apt-get -y install cmake libssl-dev libsasl2-dev
           && swift build -c debug

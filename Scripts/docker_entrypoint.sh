@@ -22,27 +22,27 @@ fi
 
 echo "STARTING CLUSTER"
 
-mongod --port 27003 --dbpath /data/db3 --replSet $REPLICA_SET_NAME --bind_ip_all &
+mongod --port 27019 --dbpath /data/db3 --replSet $REPLICA_SET_NAME --bind_ip_all &
 DB3_PID=$!
-mongod --port 27002 --dbpath /data/db2 --replSet $REPLICA_SET_NAME --bind_ip_all &
+mongod --port 27018 --dbpath /data/db2 --replSet $REPLICA_SET_NAME --bind_ip_all &
 DB2_PID=$!
-mongod --port 27001 --dbpath /data/db1 --replSet $REPLICA_SET_NAME --bind_ip_all &
+mongod --port 27017 --dbpath /data/db1 --replSet $REPLICA_SET_NAME --bind_ip_all &
 DB1_PID=$!
 
-waitForMongo 27001
-waitForMongo 27002
-waitForMongo 27003
+waitForMongo 27017
+waitForMongo 27018
+waitForMongo 27019
 
 echo "CONFIGURING REPLICA SET"
-CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: 'localhost:27001', priority: 2 }, { _id: 1, host: 'localhost:27002' }, { _id: 2, host: 'localhost:27003' } ]}"
-mongosh admin --port 27001 --eval "db.runCommand({ replSetInitiate: $CONFIG })"
+CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: 'localhost:27017', priority: 2 }, { _id: 1, host: 'localhost:27018' }, { _id: 2, host: 'localhost:27019' } ]}"
+mongosh admin --port 27017 --eval "db.runCommand({ replSetInitiate: $CONFIG })"
 
-waitForMongo 27002
-waitForMongo 27003
+waitForMongo 27018
+waitForMongo 27019
 
-mongosh admin --port 27001 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongosh admin --port 27002 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongosh admin --port 27003 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27017 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27018 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27019 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
 
 echo "REPLICA SET ONLINE"
 
