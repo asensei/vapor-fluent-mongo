@@ -4,7 +4,6 @@ services:
   mongo-setup:
     image: mongo:7
     restart: on-failure
-    network_mode: host
     volumes:
       - ./Scripts:/scripts
     entrypoint: [ "/scripts/mongo_setup.sh" ] # Make sure this file exists (see below for the setup.sh)
@@ -15,24 +14,24 @@ services:
   
   node0:
     image: mongo:7
+    container_name: node0
     restart: always
-    network_mode: host
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27017" ]
-    expose:
-      - 27017
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+    ports:
+      - 27017:27017
   
   node1:
     image: mongo:7
+    container_name: node1
     restart: always
-    network_mode: host
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018" ]
-    expose:
-      - 27018
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+    ports:
+      - 27018:27017
 
   node2:
     image: mongo:7
+    container_name: node2
     restart: always
-    network_mode: host
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27019" ]
-    expose:
-      - 27019
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+    ports:
+      - 27019:27017

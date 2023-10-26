@@ -1,8 +1,8 @@
 #!/bin/bash
 
-MONGODB1=localhost
-MONGODB2=localhost
-MONGODB3=localhost
+MONGODB1=node0
+MONGODB2=node1
+MONGODB3=node2
 
 echo "**********************************************" ${MONGODB1}
 echo "Waiting for startup.."
@@ -25,19 +25,16 @@ var cfg = {
         },
         {
             "_id": 1,
-            "host": "${MONGODB2}:27018",
+            "host": "${MONGODB2}:27017",
             "priority": 0
         },
         {
             "_id": 2,
-            "host": "${MONGODB3}:27019",
+            "host": "${MONGODB3}:27017",
             "priority": 0
         }
     ],settings: {chainingAllowed: true}
 };
 rs.initiate(cfg, { force: true });
 rs.reconfig(cfg, { force: true });
-rs.setReadPref('nearest');
-db.getMongo().setReadPref('nearest');
-db.getMongo().setSlaveOk(); 
 EOF
