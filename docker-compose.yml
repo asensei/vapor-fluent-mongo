@@ -1,39 +1,36 @@
 version: "3"
 services:
+  mongo-setup:
+    image: mongo:7
+    restart: on-failure
+    network_mode: host
+    volumes:
+      - ./Scripts:/scripts
+    entrypoint: [ "/scripts/mongo_setup.sh" ] # Make sure this file exists (see below for the setup.sh)
+    depends_on:
+      - node0
+      - node1
+      - node2
+  
   node0:
     image: mongo:7
     restart: always
-    command: --replSet rs0 --bind_ip_all
     network_mode: host
-    healthcheck:
-      test: >
-        mongosh --eval "try{rs.initiate().ok}catch(e){rs.status().ok}"
-      interval: 3s
-
+    expose:
+      - 27017
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27017" ]
+  
   node1:
-    image: mongo:7
-    depends_on:
-      - node0
     restart: always
-    command: --replSet rs0 --bind_ip_all --port 27018
     network_mode: host
-    environment:
-      PORT: 27018
-    healthcheck:
-      test: >
-        mongosh --host localhost:27017 --eval "var me = '$${HOSTNAME}:$${PORT}'; rs.status().members.some(m => m.name == me) || rs.add({host: me})"
-      interval: 3s
+    expose:
+      - 27018
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018" ]
 
   node2:
     image: mongo:7
-    depends_on:
-      - node0
     restart: always
-    command: --replSet rs0 --bind_ip_all --port 27019
     network_mode: host
-    environment:
-      PORT: 27019
-    healthcheck:
-      test: >
-        mongosh --host localhost:27017 --eval "var me = '$${HOSTNAME}:$${PORT}'; rs.status().members.some(m => m.name == me) || rs.add({host: me})"
-      interval: 3s
+    expose:
+      - 27019
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27019" ]
