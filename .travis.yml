@@ -2,7 +2,7 @@ language: generic
 
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
-  - export MONGODB_VERSION=7.0.2
+  - export MONGODB_VERSION=ubuntu2204-7.0.2
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
   - export MONGO_BREW_VERSION=mongodb-community@6.0
 
@@ -15,7 +15,7 @@ jobs:
     - stage: test
       name: Unit Tests
       os: linux
-      dist: bionic
+      dist: jammy
       services: docker
       script:
         - ./Scripts/mongo_setup.sh

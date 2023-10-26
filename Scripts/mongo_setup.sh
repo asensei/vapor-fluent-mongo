@@ -2,7 +2,7 @@
 set -e
 
 echo "DOWNLOADING MONGODB"
-wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB_VERSION}.tgz
+wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB_VERSION}.tgz
 
 echo "EXTRACTING MONGODB"
 tar xfz mongodb-linux-x86_64-${MONGODB_VERSION}.tgz
