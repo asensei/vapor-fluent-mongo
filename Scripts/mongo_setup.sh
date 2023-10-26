@@ -11,6 +11,17 @@ echo "INSTALLING MONGODB"
 export PATH=`pwd`/mongodb-linux-x86_64-${MONGODB_VERSION}/bin:$PATH
 mongod --version
 
+echo "DOWNLOADING MONGOSH"
+wget https://downloads.mongodb.com/compass/mongosh-${MONGOSH_VERSION}.tgz
+
+echo "EXTRACTING MONGOSH"
+tar xfz mongosh-${MONGOSH_VERSION}.tgz
+
+echo "INSTALLING MONGOSH"
+chmod +x mongosh-${MONGOSH_VERSION}/bin/mongosh
+export PATH=`pwd`/mongosh-${MONGOSH_VERSION}/bin:$PATH
+mongosh --version
+
 REPLICA_SET_NAME=${REPLICA_SET_NAME:=rs0}
 
 function waitForMongo {
