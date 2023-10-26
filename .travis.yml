@@ -19,7 +19,7 @@ jobs:
       dist: jammy
       services: docker
       script:
-        - ./Scripts/mongo_setup.sh
+        - ./Scripts/mongo_setup.sh &
         - docker pull ${SWIFT_DOCKER_IMAGE}
         - args="apt-get update
           && apt-get -y install cmake libssl-dev libsasl2-dev
