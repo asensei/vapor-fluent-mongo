@@ -95,7 +95,7 @@ func env(_ name: String) -> String? {
 let mongoConnectionString: String = {
     #if os(Linux)
 
-    return "mongodb://127.0.0.1:27001,127.0.0.1:27002,127.0.0.1:27003"
+    return "mongodb://host.docker.internal:27001,host.docker.internal:27002,host.docker.internal:27003"
     #else
 
     return "mongodb://localhost:27017"
