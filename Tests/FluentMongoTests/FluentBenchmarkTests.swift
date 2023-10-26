@@ -93,7 +93,13 @@ func env(_ name: String) -> String? {
 }
 
 let mongoConnectionString: String = {
+    #if os(Linux)
+
+    return "mongodb://localhost:27001,localhost:27002,localhost:27003"
+    #else
+
     return "mongodb://localhost:27017"
+    #endif
 }()
 
 func clearDatabase(_ connectionString: String, on eventLoopGroup: EventLoopGroup) throws {
