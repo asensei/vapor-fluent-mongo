@@ -1,0 +1,39 @@
+version: "3"
+services:
+  node0:
+    image: mongo:7
+    restart: always
+    command: --replSet rs0 --bind_ip_all
+    network_mode: host
+    healthcheck:
+      test: >
+        mongosh --eval "try{rs.initiate().ok}catch(e){rs.status().ok}"
+      interval: 3s
+
+  node1:
+    image: mongo:7
+    depends_on:
+      - node0
+    restart: always
+    command: --replSet rs0 --bind_ip_all --port 27018
+    network_mode: host
+    environment:
+      PORT: 27018
+    healthcheck:
+      test: >
+        mongosh --host localhost:27017 --eval "var me = '$${HOSTNAME}:$${PORT}'; rs.status().members.some(m => m.name == me) || rs.add({host: me})"
+      interval: 3s
+
+  node2:
+    image: mongo:7
+    depends_on:
+      - node0
+    restart: always
+    command: --replSet rs0 --bind_ip_all --port 27019
+    network_mode: host
+    environment:
+      PORT: 27019
+    healthcheck:
+      test: >
+        mongosh --host localhost:27017 --eval "var me = '$${HOSTNAME}:$${PORT}'; rs.status().members.some(m => m.name == me) || rs.add({host: me})"
+      interval: 3s

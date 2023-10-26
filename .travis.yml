@@ -20,7 +20,7 @@ jobs:
       script:
         - docker pull ${SWIFT_DOCKER_IMAGE}
         - docker pull ${MONGO_DOCKER_IMAGE}
-        - docker run -p 27001:27001 -p 27002:27002 -p 27003:27003 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
+        - docker compose up -d
         - args="apt-get update
           && apt-get -y install cmake libssl-dev libsasl2-dev
           && swift build -c debug
