@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+ulimit -u 1024
+
 REPLICA_SET_NAME=${REPLICA_SET_NAME:=rs0}
 
 function waitForMongo {
