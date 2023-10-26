@@ -2,8 +2,9 @@ language: generic
 
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
+  - export MONGODB_VERSION=7
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:7.0
+  - export MONGO_DOCKER_IMAGE=mongo:${MONGODB_VERSION}
   - export MONGO_BREW_VERSION=mongodb-community@6.0
 
 stages:
@@ -18,10 +19,13 @@ jobs:
       dist: bionic
       services: docker
       script:
+        - ./Scripts/mongo_setup.sh
         - docker pull ${SWIFT_DOCKER_IMAGE}
-        - docker pull ${MONGO_DOCKER_IMAGE}
-        - docker run -d -p 27017:27017 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
-        - args="apt-get update && apt-get -y install cmake libssl-dev libsasl2-dev && swift test -c debug --sanitize=thread";
+        - args="apt-get update
+          && apt-get -y install cmake libssl-dev libsasl2-dev
+          && swift build -c debug
+          && swift build -c release
+          && swift test -c debug --sanitize=thread";
         - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
 
     - stage: test

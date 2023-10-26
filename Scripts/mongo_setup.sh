@@ -1,7 +1,15 @@
 #!/bin/bash
 set -e
 
-ulimit -u 1024
+echo "DOWNLOADING MONGODB"
+wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB_VERSION}.tgz
+
+echo "EXTRACTING MONGODB"
+tar xfz mongodb-linux-x86_64-${MONGODB_VERSION}.tgz
+
+echo "INSTALLING MONGODB"
+export PATH=`pwd`/mongodb-linux-x86_64-${MONGODB_VERSION}/bin:$PATH
+mongod --version
 
 REPLICA_SET_NAME=${REPLICA_SET_NAME:=rs0}
 
@@ -18,7 +26,9 @@ function waitForMongo {
 
 echo "STARTING CLUSTER"
 
-mongod --port 27017 --replSet $REPLICA_SET_NAME --bind_ip_all &
+mkdir -p data/db
+
+mongod --port 27017 --dbpath=data/db --replSet $REPLICA_SET_NAME --bind_ip_all &
 DB1_PID=$!
 
 waitForMongo 27017
