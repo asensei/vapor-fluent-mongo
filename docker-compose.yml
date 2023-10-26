@@ -1,5 +1,6 @@
 version: "3"
 services:
+
   mongo-setup:
     image: mongo:7
     restart: on-failure
@@ -16,21 +17,22 @@ services:
     image: mongo:7
     restart: always
     network_mode: host
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27017" ]
     expose:
       - 27017
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27017" ]
   
   node1:
+    image: mongo:7
     restart: always
     network_mode: host
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018" ]
     expose:
       - 27018
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018" ]
 
   node2:
     image: mongo:7
     restart: always
     network_mode: host
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27019" ]
     expose:
       - 27019
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27019" ]
