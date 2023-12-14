@@ -2,37 +2,36 @@ language: generic
 
 before_install:
   - export SWIFT_VERSION=$(<.swift-version)
+  - export MONGODB_VERSION=ubuntu2204-7.0.2
+  - export MONGOSH_VERSION=2.0.2-linux-x64
   - export SWIFT_DOCKER_IMAGE=swift:${SWIFT_VERSION}-bionic
-  - export MONGO_DOCKER_IMAGE=mongo:5.0
-  - export MONGO_BREW_VERSION=mongodb-community@5.0
+  - export MONGO_BREW_VERSION=mongodb-community@6.0
 
 stages:
-- name: test
-  if: tag IS NOT present
+  - name: test
+    if: tag IS NOT present
 
 jobs:
   include:
-
     - stage: test
       name: Unit Tests
       os: linux
-      dist: bionic
+      dist: jammy
       services: docker
       script:
+        - ./Scripts/mongo_setup.sh &
         - docker pull ${SWIFT_DOCKER_IMAGE}
-        - docker pull ${MONGO_DOCKER_IMAGE}
-        - docker run -d -p 27001:27001 -p 27002:27002 -p 27003:27003 -v $(pwd)/Scripts:/scripts:ro --entrypoint /scripts/docker_entrypoint.sh --restart=always ${MONGO_DOCKER_IMAGE}
         - args="apt-get update
-            && apt-get -y install cmake libssl-dev libsasl2-dev
-            && swift build --enable-test-discovery -c debug
-            && swift build --enable-test-discovery -c release
-            && swift test --enable-test-discovery -c debug --sanitize=thread";        
+          && apt-get -y install cmake libssl-dev libsasl2-dev
+          && swift build -c debug
+          && swift build -c release
+          && swift test -c debug --sanitize=thread";
         - docker run --rm --net=host -v $(pwd):/app --workdir /app ${SWIFT_DOCKER_IMAGE} bash -c "${args}"
 
     - stage: test
       name: Unit Tests
       os: osx
-      osx_image: xcode13.4
+      osx_image: xcode14.2
       before_script:
         - gem install bundler
         - bundle install
